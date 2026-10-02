@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  --primary-navy: #0f172a;
+  --primary-blue: #1e40af;
+  --accent-gold: #f59e0b;
+  --accent-green: #10b981;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.03); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
+/* =========================================================
+   PERFECT FULL-PAGE PDF PRINT STYLES (No Cutoffs / No Scroll)
+   ========================================================= */
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 6mm 6mm 6mm 6mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide app navigation, sidebars, buttons, headers */
+  aside, nav, header, button, .print\:hidden, .no-print {
+    display: none !important;
+  }
+
+  /* Reset modal containers so they don't clip */
+  .fixed.inset-0 {
+    position: static !important;
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    display: block !important;
+  }
+
+  .max-h-\[75vh\], .max-h-\[80vh\], .max-h-\[85vh\], .overflow-y-auto {
+    max-height: none !important;
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .rounded-3xl, .rounded-2xl, .shadow-2xl, .shadow-xl, .border {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  #printable-estimate-doc {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
