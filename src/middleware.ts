@@ -92,6 +92,8 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
+export default middleware;
+
 export const config = {
   matcher: [
     /*
