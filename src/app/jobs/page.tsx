@@ -10,23 +10,24 @@ import {
   CheckCircle2,
   Send,
   User,
-  ShieldCheck,
   RefreshCw,
-  Sliders,
-  AlertCircle,
   X,
-  CreditCard,
-  Phone,
-  Mail,
-  Building2,
-  Sparkles,
-  Trash2,
-  Wrench,
-  Grid3X3,
   Printer,
   FileText,
   DollarSign,
-  Calendar,
+  Search,
+  SlidersHorizontal,
+  Table as TableIcon,
+  LayoutGrid,
+  Edit3,
+  Trash2,
+  Phone,
+  Mail,
+  Building2,
+  AlertCircle,
+  ExternalLink,
+  ChevronRight,
+  Filter,
 } from 'lucide-react';
 import EstimatePdfDocument from '@/components/EstimatePdfDocument';
 
@@ -36,6 +37,11 @@ export default function JobsPage() {
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  // Search & Filtering State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterTab, setFilterTab] = useState<'all' | 'upcoming' | 'done' | 'unpaid' | 'cancelled'>('all');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Live Crew Dispatch ETA Modal
   const [etaModalJob, setEtaModalJob] = useState<any | null>(null);
@@ -50,7 +56,7 @@ export default function JobsPage() {
   const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('existing');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
 
-  // Status & Financials
+  // Status & Financials for New Booking
   const [bookingStatus, setBookingStatus] = useState<'scheduled' | 'reminder_sent' | 'en_route' | 'in_progress' | 'completed' | 'cancelled'>('scheduled');
   const [includeGst, setIncludeGst] = useState(true);
   const [depositPaid, setDepositPaid] = useState<number | string>(0);
@@ -58,7 +64,7 @@ export default function JobsPage() {
   const [depositPaymentMethod, setDepositPaymentMethod] = useState('e-Transfer');
   const [jobCosts, setJobCosts] = useState<number | string>(0);
 
-  // New Customer Fields (for on-the-fly creation)
+  // New Customer Fields
   const [newCustName, setNewCustName] = useState('');
   const [newCustPhone, setNewCustPhone] = useState('');
   const [newCustEmail, setNewCustEmail] = useState('');
@@ -78,7 +84,7 @@ export default function JobsPage() {
   const [customerNotes, setCustomerNotes] = useState('');
   const [sendConfirmationNow, setSendConfirmationNow] = useState(true);
 
-  // Line items & Standard Services
+  // Line items
   const [serviceSearchQuery, setServiceSearchQuery] = useState('');
   const [items, setItems] = useState([
     {
@@ -90,10 +96,32 @@ export default function JobsPage() {
     },
   ]);
 
-  // Roof Matrix Calculator Modal inside Booking
+  // Roof Matrix Calculator Modal
   const [isRoofCalcOpen, setIsRoofCalcOpen] = useState(false);
+  const [roofCalcTarget, setRoofCalcTarget] = useState<'new' | 'edit'>('new');
   const [roofSize, setRoofSize] = useState<'small' | 'medium' | 'large' | 'xLarge'>('medium');
   const [roofStories, setRoofStories] = useState<'oneStory' | 'twoStory' | 'threeStory'>('twoStory');
+
+  // EDIT BOOKING MODAL STATE
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<any | null>(null);
+  const [editCustomerName, setEditCustomerName] = useState('');
+  const [editCustomerPhone, setEditCustomerPhone] = useState('');
+  const [editCustomerEmail, setEditCustomerEmail] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editStatus, setEditStatus] = useState<'scheduled' | 'reminder_sent' | 'en_route' | 'in_progress' | 'completed' | 'cancelled'>('scheduled');
+  const [editScheduledDate, setEditScheduledDate] = useState('');
+  const [editScheduledTime, setEditScheduledTime] = useState('10:00 AM');
+  const [editDurationHours, setEditDurationHours] = useState<number | string>(2.5);
+  const [editAssignedCrew, setEditAssignedCrew] = useState('H&H Lead Crew');
+  const [editIncludeGst, setEditIncludeGst] = useState(true);
+  const [editDepositPaid, setEditDepositPaid] = useState<number | string>(0);
+  const [editDepositCollectedBy, setEditDepositCollectedBy] = useState('Charanjeet Brar');
+  const [editDepositPaymentMethod, setEditDepositPaymentMethod] = useState('e-Transfer');
+  const [editJobCosts, setEditJobCosts] = useState<number | string>(0);
+  const [editNotes, setEditNotes] = useState('');
+  const [editCustomerNotes, setEditCustomerNotes] = useState('');
+  const [editItems, setEditItems] = useState<any[]>([]);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -126,6 +154,25 @@ export default function JobsPage() {
     fetchJobs();
   }, []);
 
+  // Standard services
+  const availableServices = settings?.customServices || [
+    { name: 'House soft wash', price: 280, unit: 'per job' },
+    { name: 'Gutter cleaning only', price: 220, unit: 'per job' },
+    { name: 'Window cleaning', price: 160, unit: 'per job' },
+    { name: 'Driveway and concrete', price: 180, unit: 'per job' },
+    { name: 'Deck and patio', price: 200, unit: 'per job' },
+    { name: 'Siding wash', price: 250, unit: 'per job' },
+    { name: 'Commercial wash', price: 450, unit: 'per job' },
+    { name: 'Lawn mowing', price: 85, unit: 'per job' },
+    { name: 'Hedge and bush trimming', price: 140, unit: 'per job' },
+    { name: 'Tree trimming', price: 250, unit: 'per job' },
+    { name: 'Yard cleanup', price: 190, unit: 'per job' },
+    { name: 'Fence installation', price: 1200, unit: 'per job' },
+    { name: 'Fence repair', price: 350, unit: 'per job' },
+    { name: 'Gate installation', price: 400, unit: 'per job' },
+  ];
+
+  // Helper calculations for New Booking
   const calculateSubtotal = () => items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
   const calculateTax = () => {
     if (!includeGst) return 0;
@@ -136,6 +183,20 @@ export default function JobsPage() {
   const calculateBalanceDue = () => {
     const total = calculateTotal();
     const deposit = Number(depositPaid) || 0;
+    return Math.max(0, Number((total - deposit).toFixed(2)));
+  };
+
+  // Helper calculations for Edit Booking
+  const calculateEditSubtotal = () => editItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+  const calculateEditTax = () => {
+    if (!editIncludeGst) return 0;
+    const rate = settings?.gstRate !== undefined ? settings.gstRate / 100 : 0.05;
+    return Number((calculateEditSubtotal() * rate).toFixed(2));
+  };
+  const calculateEditTotal = () => Number((calculateEditSubtotal() + calculateEditTax()).toFixed(2));
+  const calculateEditBalanceDue = () => {
+    const total = calculateEditTotal();
+    const deposit = Number(editDepositPaid) || 0;
     return Math.max(0, Number((total - deposit).toFixed(2)));
   };
 
@@ -155,19 +216,56 @@ export default function JobsPage() {
       setItems([
         ...items,
         {
-          service: 'Extra Materials & Job Cost',
-          description: 'Special equipment rental / disposal / dump fee',
+          service: 'Custom Material / Extra Fee',
+          description: 'Disposal fee, materials or specialized equipment',
           quantity: 1,
-          unitPrice: 50,
-          total: 50,
+          unitPrice: 75,
+          total: 75,
         },
       ]);
     } else {
       setItems([
         ...items,
         {
-          service: 'Custom Maintenance Work',
+          service: 'Custom Cleaning Service',
           description: 'Specialized property cleaning',
+          quantity: 1,
+          unitPrice: 150,
+          total: 150,
+        },
+      ]);
+    }
+  };
+
+  const handleAddEditItem = (presetSvc?: any, type: 'service' | 'cost' = 'service') => {
+    if (presetSvc) {
+      setEditItems([
+        ...editItems,
+        {
+          service: presetSvc.name,
+          description: presetSvc.description || `Standard ${presetSvc.name}`,
+          quantity: 1,
+          unitPrice: presetSvc.price || presetSvc.defaultPrice || 200,
+          total: presetSvc.price || presetSvc.defaultPrice || 200,
+        },
+      ]);
+    } else if (type === 'cost') {
+      setEditItems([
+        ...editItems,
+        {
+          service: 'Custom Material / Extra Fee',
+          description: 'Disposal fee, materials or specialized equipment',
+          quantity: 1,
+          unitPrice: 75,
+          total: 75,
+        },
+      ]);
+    } else {
+      setEditItems([
+        ...editItems,
+        {
+          service: 'Custom Service',
+          description: 'Specialized property maintenance',
           quantity: 1,
           unitPrice: 150,
           total: 150,
@@ -200,21 +298,38 @@ export default function JobsPage() {
     const price = matrix[roofSize]?.[roofStories] || 500;
     const desc = `Roof cleaning (gutters included) for ${sizeLabels[roofSize]}, ${storyLabels[roofStories]}`;
 
-    setItems([
-      ...items,
-      {
-        service: 'Roof Cleaning (Gutters Included)',
-        description: desc,
-        quantity: 1,
-        unitPrice: price,
-        total: price,
-      },
-    ]);
+    if (roofCalcTarget === 'edit') {
+      setEditItems([
+        ...editItems,
+        {
+          service: 'Roof Cleaning (Gutters Included)',
+          description: desc,
+          quantity: 1,
+          unitPrice: price,
+          total: price,
+        },
+      ]);
+    } else {
+      setItems([
+        ...items,
+        {
+          service: 'Roof Cleaning (Gutters Included)',
+          description: desc,
+          quantity: 1,
+          unitPrice: price,
+          total: price,
+        },
+      ]);
+    }
     setIsRoofCalcOpen(false);
   };
 
   const handleRemoveItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveEditItem = (index: number) => {
+    setEditItems(editItems.filter((_, i) => i !== index));
   };
 
   const handleItemChange = (index: number, field: string, value: any) => {
@@ -227,6 +342,146 @@ export default function JobsPage() {
     setItems(updated);
   };
 
+  const handleEditItemChange = (index: number, field: string, value: any) => {
+    const updated = [...editItems];
+    const current = { ...updated[index], [field]: value };
+    if (field === 'quantity' || field === 'unitPrice') {
+      current.total = Number(current.quantity) * Number(current.unitPrice);
+    }
+    updated[index] = current;
+    setEditItems(updated);
+  };
+
+  // Open Edit Modal with selected Job
+  const handleOpenEditModal = (job: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setEditingJob(job);
+    setEditCustomerName(job.customerName || '');
+    setEditCustomerPhone(job.customerPhone || '');
+    setEditCustomerEmail(job.customerEmail || '');
+    setEditAddress(job.address || '');
+    setEditStatus(job.status || 'scheduled');
+    setEditScheduledDate(
+      job.scheduledDate
+        ? new Date(job.scheduledDate).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0]
+    );
+    setEditScheduledTime(job.scheduledTime || '10:00 AM');
+    setEditDurationHours(job.durationHours || 2.5);
+    setEditAssignedCrew(job.assignedCrew || 'H&H Lead Crew');
+    setEditIncludeGst(job.includeGst !== false && (job.tax > 0 || job.includeGst === true));
+    setEditDepositPaid(job.depositPaid || 0);
+    setEditDepositCollectedBy(job.depositCollectedBy || 'Charanjeet Brar');
+    setEditDepositPaymentMethod(job.depositPaymentMethod || 'e-Transfer');
+    setEditJobCosts(job.jobCosts || 0);
+    setEditNotes(job.notes || '');
+    setEditCustomerNotes(job.customerNotes || '');
+    setEditItems(
+      job.items && job.items.length > 0
+        ? job.items
+        : job.services?.map((s: string) => ({
+            service: s,
+            description: `Standard ${s}`,
+            quantity: 1,
+            unitPrice: (Number(job.totalAmount) || 0) / (job.services?.length || 1),
+            total: (Number(job.totalAmount) || 0) / (job.services?.length || 1),
+          })) || [
+            {
+              service: 'House soft wash',
+              description: 'Standard exterior wash',
+              quantity: 1,
+              unitPrice: 280,
+              total: 280,
+            },
+          ]
+    );
+    setIsEditModalOpen(true);
+  };
+
+  // Update Existing Booking
+  const handleUpdateJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingJob) return;
+
+    const subtotal = calculateEditSubtotal();
+    const rate = settings?.gstRate !== undefined ? settings.gstRate / 100 : 0.05;
+    const tax = editIncludeGst ? Number((subtotal * rate).toFixed(2)) : 0;
+    const totalAmount = Number((subtotal + tax).toFixed(2));
+    const deposit = Number(editDepositPaid) || 0;
+    const balanceDue = Math.max(0, Number((totalAmount - deposit).toFixed(2)));
+
+    const servicesList = editItems.map((i: any) => i.service);
+    const title = servicesList.join(' & ') || 'House Maintenance Service';
+
+    const payload = {
+      customerName: editCustomerName,
+      customerPhone: editCustomerPhone,
+      customerEmail: editCustomerEmail,
+      address: editAddress,
+      status: editStatus,
+      scheduledDate: new Date(editScheduledDate),
+      scheduledTime: editScheduledTime,
+      durationHours: Number(editDurationHours) || 2.5,
+      assignedCrew: editAssignedCrew,
+      items: editItems,
+      services: servicesList,
+      title,
+      subtotal,
+      tax,
+      includeGst: editIncludeGst,
+      totalAmount,
+      depositPaid: deposit,
+      depositCollectedBy: deposit > 0 ? editDepositCollectedBy : '',
+      depositPaymentMethod: deposit > 0 ? editDepositPaymentMethod : '',
+      balanceDue,
+      jobCosts: Number(editJobCosts) || 0,
+      notes: editNotes,
+      customerNotes: editCustomerNotes,
+    };
+
+    try {
+      const res = await fetch(`/api/jobs/${editingJob._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsEditModalOpen(false);
+        setEditingJob(null);
+        setActionNotice(`Booking #${editingJob.jobNumber} updated successfully!`);
+        setTimeout(() => setActionNotice(null), 3500);
+        fetchJobs();
+      } else {
+        alert(data.error || 'Failed to update booking');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Delete Booking
+  const handleDeleteJob = async (id: string, jobNumber: string) => {
+    if (!confirm(`Are you sure you want to delete Booking #${jobNumber}? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/jobs/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        if (isEditModalOpen) setIsEditModalOpen(false);
+        setActionNotice(`Booking #${jobNumber} deleted.`);
+        setTimeout(() => setActionNotice(null), 3500);
+        fetchJobs();
+      } else {
+        alert(data.error || 'Failed to delete booking');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Create New Booking
   const handleCreateBooking = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -287,7 +542,7 @@ export default function JobsPage() {
             sendConfirmationNow ? 'Confirmation SMS/Email dispatched.' : ''
           }`
         );
-        setTimeout(() => setActionNotice(null), 4000);
+        setTimeout(() => setActionNotice(null), 4500);
         // Reset form
         setNewCustName('');
         setNewCustPhone('');
@@ -306,8 +561,9 @@ export default function JobsPage() {
     }
   };
 
-  // Action #3: Send Day Before Job SMS
-  const handleSendDayBefore = async (id: string) => {
+  // Action: Send Day Before SMS
+  const handleSendDayBefore = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     try {
       const res = await fetch(`/api/jobs/${id}`, {
         method: 'PUT',
@@ -325,7 +581,7 @@ export default function JobsPage() {
     }
   };
 
-  // Action #4: Crew Leaving Dispatch
+  // Action: Crew Leaving Dispatch
   const handleConfirmEnRoute = async () => {
     if (!etaModalJob) return;
     try {
@@ -349,8 +605,9 @@ export default function JobsPage() {
     }
   };
 
-  // Action #5: Mark Job Completed
-  const handleMarkCompleted = async (id: string, createInvoiceNow = true) => {
+  // Action: Mark Job Completed
+  const handleMarkCompleted = async (id: string, createInvoiceNow = true, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     try {
       const res = await fetch(`/api/jobs/${id}`, {
         method: 'PUT',
@@ -372,7 +629,8 @@ export default function JobsPage() {
     }
   };
 
-  const handleOpenPdfWorkOrder = (job: any) => {
+  const handleOpenPdfWorkOrder = (job: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     const cust = customers.find((c) => c._id === job.customerId) || {
       name: job.customerName,
       phone: job.customerPhone,
@@ -412,27 +670,59 @@ export default function JobsPage() {
     setIsPdfModalOpen(true);
   };
 
-  // Available standard services
-  const availableServices = settings?.customServices || [
-    { name: 'House soft wash', price: 280, unit: 'per job' },
-    { name: 'Gutter cleaning only', price: 220, unit: 'per job' },
-    { name: 'Window cleaning', price: 160, unit: 'per job' },
-    { name: 'Driveway and concrete', price: 180, unit: 'per job' },
-    { name: 'Deck and patio', price: 200, unit: 'per job' },
-    { name: 'Siding wash', price: 250, unit: 'per job' },
-    { name: 'Commercial wash', price: 450, unit: 'per job' },
-    { name: 'Lawn mowing', price: 85, unit: 'per job' },
-    { name: 'Hedge and bush trimming', price: 140, unit: 'per job' },
-    { name: 'Tree trimming', price: 250, unit: 'per job' },
-    { name: 'Yard cleanup', price: 190, unit: 'per job' },
-    { name: 'Fence installation', price: 1200, unit: 'per job' },
-    { name: 'Fence repair', price: 350, unit: 'per job' },
-    { name: 'Gate installation', price: 400, unit: 'per job' },
-  ];
+  // Filter & Search calculation
+  const filteredJobs = jobs.filter((job) => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchSearch =
+      !q ||
+      job.jobNumber?.toLowerCase().includes(q) ||
+      job.customerName?.toLowerCase().includes(q) ||
+      job.customerPhone?.toLowerCase().includes(q) ||
+      job.customerEmail?.toLowerCase().includes(q) ||
+      job.title?.toLowerCase().includes(q) ||
+      job.address?.toLowerCase().includes(q) ||
+      job.assignedCrew?.toLowerCase().includes(q) ||
+      job.services?.some((s: string) => s.toLowerCase().includes(q));
+
+    if (!matchSearch) return false;
+
+    if (filterTab === 'upcoming') {
+      return ['scheduled', 'reminder_sent', 'en_route', 'in_progress'].includes(job.status);
+    }
+    if (filterTab === 'done') {
+      return job.status === 'completed';
+    }
+    if (filterTab === 'unpaid') {
+      const balance =
+        job.balanceDue !== undefined
+          ? Number(job.balanceDue)
+          : (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0);
+      return balance > 0.01 && job.status !== 'cancelled';
+    }
+    if (filterTab === 'cancelled') {
+      return job.status === 'cancelled';
+    }
+    return true; // 'all'
+  });
+
+  // Tab counts
+  const countAll = jobs.length;
+  const countUpcoming = jobs.filter((j) =>
+    ['scheduled', 'reminder_sent', 'en_route', 'in_progress'].includes(j.status)
+  ).length;
+  const countDone = jobs.filter((j) => j.status === 'completed').length;
+  const countUnpaid = jobs.filter((j) => {
+    const b =
+      j.balanceDue !== undefined
+        ? Number(j.balanceDue)
+        : (Number(j.totalAmount) || 0) - (Number(j.depositPaid) || 0);
+    return b > 0.01 && j.status !== 'cancelled';
+  }).length;
+  const countCancelled = jobs.filter((j) => j.status === 'cancelled').length;
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner */}
+    <div className="space-y-5">
+      {/* TOP HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
@@ -440,15 +730,43 @@ export default function JobsPage() {
             Bookings &amp; Live Dispatch Pipeline
           </h1>
           <p className="text-xs text-slate-500">
-            Create new customer bookings, schedule crew, calculate prices &amp; trigger real-time dispatch sequences
+            View all bookings in a searchable table, filter upcoming/unpaid, click to edit &amp; manage live dispatch
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Table View"
+            >
+              <TableIcon className="w-3.5 h-3.5" />
+              <span>Table</span>
+            </button>
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                viewMode === 'cards'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Card Pipeline View"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Cards</span>
+            </button>
+          </div>
+
           {/* New Booking Button */}
           <button
             onClick={() => setIsBookingModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md shadow-blue-500/20 flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md shadow-blue-500/20 flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>+ New Booking</span>
@@ -456,8 +774,8 @@ export default function JobsPage() {
 
           <button
             onClick={fetchJobs}
-            className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 cursor-pointer"
-            title="Refresh pipeline"
+            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 cursor-pointer"
+            title="Refresh bookings list"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -471,185 +789,1008 @@ export default function JobsPage() {
         </div>
       )}
 
-      {/* Jobs Pipeline */}
-      <div className="grid grid-cols-1 gap-4">
-        {loading ? (
-          <div className="p-12 text-center text-xs text-slate-400 bg-white rounded-3xl border">
-            Loading scheduled bookings &amp; jobs...
-          </div>
-        ) : jobs.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-400 bg-white rounded-3xl border space-y-2">
-            <CalendarCheck className="w-8 h-8 mx-auto text-slate-300" />
-            <div>No active bookings found.</div>
-            <button
-              onClick={() => setIsBookingModalOpen(true)}
-              className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
-            >
-              + Create your first booking
-            </button>
-          </div>
-        ) : (
-          jobs.map((job) => {
-            const isCompleted = job.status === 'completed';
-            const isEnRoute = job.status === 'en_route';
-            const hasDeposit = Number(job.depositPaid) > 0;
-            const balanceDue = job.balanceDue !== undefined ? Number(job.balanceDue) : Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
-
-            return (
-              <div
-                key={job._id}
-                className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs hover:shadow-md transition space-y-4"
+      {/* SEARCH BAR & STATUS FILTER TABS */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-xs space-y-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Search Bar */}
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by customer, phone, job # (e.g. JOB-4001), address, service or crew..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 bg-slate-50/50 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
               >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-slate-900 text-base">{job.customerName}</span>
-                      <span className="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                        {job.jobNumber}
-                      </span>
-                      <span
-                        className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                          isCompleted
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : isEnRoute
-                            ? 'bg-orange-100 text-orange-800 animate-pulse-glow flex items-center gap-1'
-                            : job.status === 'in_progress'
-                            ? 'bg-amber-100 text-amber-800'
-                            : job.status === 'reminder_sent'
-                            ? 'bg-blue-100 text-blue-800'
-                            : job.status === 'cancelled'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Quick Stats Summary */}
+          <div className="text-xs text-slate-500 font-medium px-1 flex items-center gap-2">
+            <span>Showing:</span>
+            <strong className="text-slate-900">{filteredJobs.length}</strong> of{' '}
+            <strong className="text-slate-900">{jobs.length}</strong> bookings
+          </div>
+        </div>
+
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs border-t border-slate-100 pt-3">
+          <button
+            onClick={() => setFilterTab('all')}
+            className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              filterTab === 'all'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <span>All Bookings</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${filterTab === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              {countAll}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setFilterTab('upcoming')}
+            className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              filterTab === 'upcoming'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+            }`}
+          >
+            <span>⚡ Upcoming / Active</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${filterTab === 'upcoming' ? 'bg-blue-500 text-white' : 'bg-blue-200 text-blue-800'}`}>
+              {countUpcoming}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setFilterTab('done')}
+            className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              filterTab === 'done'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+            }`}
+          >
+            <span>✅ Done / Completed</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${filterTab === 'done' ? 'bg-emerald-500 text-white' : 'bg-emerald-200 text-emerald-800'}`}>
+              {countDone}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setFilterTab('unpaid')}
+            className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              filterTab === 'unpaid'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+            }`}
+          >
+            <span>💳 Unpaid / Balance Due</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${filterTab === 'unpaid' ? 'bg-amber-500 text-white' : 'bg-amber-200 text-amber-800'}`}>
+              {countUnpaid}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setFilterTab('cancelled')}
+            className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              filterTab === 'cancelled'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+            }`}
+          >
+            <span>❌ Cancelled</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${filterTab === 'cancelled' ? 'bg-rose-500 text-white' : 'bg-rose-200 text-rose-800'}`}>
+              {countCancelled}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* TABLE VIEW (DEFAULT) */}
+      {viewMode === 'table' ? (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+          {loading ? (
+            <div className="p-12 text-center text-xs text-slate-400">
+              Loading scheduled bookings &amp; jobs...
+            </div>
+          ) : filteredJobs.length === 0 ? (
+            <div className="p-12 text-center text-xs text-slate-400 space-y-2">
+              <CalendarCheck className="w-8 h-8 mx-auto text-slate-300" />
+              <div>No bookings match the selected filter &amp; search.</div>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterTab('all');
+                }}
+                className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+              >
+                Clear search &amp; filter
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] uppercase font-bold text-slate-600 tracking-wider">
+                    <th className="py-3.5 px-4">JOB # &amp; DATE</th>
+                    <th className="py-3.5 px-4">CUSTOMER &amp; PROPERTY</th>
+                    <th className="py-3.5 px-4">SERVICES / SCOPE</th>
+                    <th className="py-3.5 px-3">CREW</th>
+                    <th className="py-3.5 px-3">STATUS</th>
+                    <th className="py-3.5 px-4 text-right">TOTAL &amp; BALANCE</th>
+                    <th className="py-3.5 px-4 text-center">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {filteredJobs.map((job) => {
+                    const isCompleted = job.status === 'completed';
+                    const isEnRoute = job.status === 'en_route';
+                    const isCancelled = job.status === 'cancelled';
+                    const hasDeposit = Number(job.depositPaid) > 0;
+                    const balanceDue =
+                      job.balanceDue !== undefined
+                        ? Number(job.balanceDue)
+                        : Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
+
+                    return (
+                      <tr
+                        key={job._id}
+                        onClick={() => handleOpenEditModal(job)}
+                        className="hover:bg-blue-50/50 transition cursor-pointer group"
                       >
-                        {isEnRoute ? (
-                          <>
-                            <Flame className="w-3 h-3 text-orange-600" /> En Route (ETA: {job.etaMinutes || 25}m)
-                          </>
+                        {/* Job Number & Date */}
+                        <td className="py-3.5 px-4 align-top">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="font-mono font-bold text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                              {job.jobNumber}
+                            </span>
+                            {job.tax > 0 ? (
+                              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded">
+                                5% GST
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded">
+                                0% Tax
+                              </span>
+                            )}
+                          </div>
+                          <div className="font-bold text-slate-900 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-blue-600" />
+                            <span>{new Date(job.scheduledDate).toLocaleDateString()}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            {job.scheduledTime} (~{job.durationHours || 2.5}h)
+                          </div>
+                        </td>
+
+                        {/* Customer & Address */}
+                        <td className="py-3.5 px-4 align-top">
+                          <div className="font-bold text-slate-900 text-sm group-hover:text-blue-700 transition">
+                            {job.customerName}
+                          </div>
+                          <div className="text-[11px] text-slate-600 flex items-center gap-1 mt-0.5">
+                            <Phone className="w-3 h-3 text-slate-400" />
+                            <a
+                              href={`tel:${job.customerPhone}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="hover:text-blue-600 hover:underline"
+                            >
+                              {job.customerPhone}
+                            </a>
+                          </div>
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 line-clamp-1">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[200px]">{job.address}</span>
+                          </div>
+                        </td>
+
+                        {/* Services & Scope */}
+                        <td className="py-3.5 px-4 align-top">
+                          <div className="font-semibold text-slate-900">
+                            {job.title}
+                          </div>
+                          {job.items && job.items.length > 0 ? (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {job.items.slice(0, 2).map((it: any, iIdx: number) => (
+                                <span
+                                  key={iIdx}
+                                  className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium"
+                                >
+                                  {it.service}
+                                </span>
+                              ))}
+                              {job.items.length > 2 && (
+                                <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">
+                                  +{job.items.length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          ) : null}
+                          {(job.notes || job.customerNotes) && (
+                            <div className="text-[10px] text-slate-400 mt-1 line-clamp-1 italic">
+                              📝 {job.notes || job.customerNotes}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Crew */}
+                        <td className="py-3.5 px-3 align-top whitespace-nowrap">
+                          <span className="inline-block px-2 py-1 rounded-lg bg-slate-100 text-slate-700 font-medium text-[11px]">
+                            {job.assignedCrew}
+                          </span>
+                        </td>
+
+                        {/* Status Badge */}
+                        <td className="py-3.5 px-3 align-top whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                              isCompleted
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : isEnRoute
+                                ? 'bg-orange-100 text-orange-800 animate-pulse'
+                                : job.status === 'in_progress'
+                                ? 'bg-amber-100 text-amber-800'
+                                : job.status === 'reminder_sent'
+                                ? 'bg-blue-100 text-blue-800'
+                                : isCancelled
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {isEnRoute ? (
+                              <>
+                                <Flame className="w-3 h-3 text-orange-600" /> En Route ({job.etaMinutes || 25}m)
+                              </>
+                            ) : (
+                              job.status?.toUpperCase().replace('_', ' ') || 'SCHEDULED'
+                            )}
+                          </span>
+                        </td>
+
+                        {/* Total, Deposit & Balance Due */}
+                        <td className="py-3.5 px-4 align-top text-right whitespace-nowrap">
+                          <div className="font-black text-slate-900 text-sm">
+                            ${(Number(job.totalAmount) || 0).toFixed(2)}
+                          </div>
+                          {hasDeposit ? (
+                            <div className="text-[10px] text-emerald-700 font-bold mt-0.5">
+                              ✓ Dep: ${(Number(job.depositPaid) || 0).toFixed(2)}
+                              {job.depositCollectedBy && (
+                                <span className="text-slate-500 block text-[9px]">
+                                  ({job.depositCollectedBy})
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-slate-400 mt-0.5">Dep: $0.00</div>
+                          )}
+                          <div
+                            className={`text-[11px] font-bold px-1.5 py-0.5 rounded mt-1 inline-block ${
+                              balanceDue <= 0.01
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-amber-50 text-amber-800 border border-amber-200'
+                            }`}
+                          >
+                            Due: ${balanceDue.toFixed(2)}
+                          </div>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-4 align-top text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            {/* Edit Button */}
+                            <button
+                              onClick={(e) => handleOpenEditModal(job, e)}
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 transition cursor-pointer"
+                              title="Edit Booking Details"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+
+                            {/* Work Order PDF Button */}
+                            <button
+                              onClick={(e) => handleOpenPdfWorkOrder(job, e)}
+                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                              title="View &amp; Print Work Order PDF"
+                            >
+                              <Printer className="w-4 h-4 text-slate-600" />
+                            </button>
+
+                            {!isCompleted && !isCancelled && (
+                              <>
+                                {/* Dispatch Crew ETA */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEtaModalJob(job);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 transition cursor-pointer"
+                                  title="Dispatch Crew (Live ETA SMS)"
+                                >
+                                  <Flame className="w-4 h-4" />
+                                </button>
+
+                                {/* Complete Job */}
+                                <button
+                                  onClick={(e) => handleMarkCompleted(job._id, true, e)}
+                                  className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition cursor-pointer"
+                                  title="Complete Service &amp; Generate Invoice"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* CARDS / PIPELINE VIEW */
+        <div className="grid grid-cols-1 gap-4">
+          {loading ? (
+            <div className="p-12 text-center text-xs text-slate-400 bg-white rounded-3xl border">
+              Loading scheduled bookings &amp; jobs...
+            </div>
+          ) : filteredJobs.length === 0 ? (
+            <div className="p-12 text-center text-xs text-slate-400 bg-white rounded-3xl border space-y-2">
+              <CalendarCheck className="w-8 h-8 mx-auto text-slate-300" />
+              <div>No bookings match the selected filter &amp; search.</div>
+            </div>
+          ) : (
+            filteredJobs.map((job) => {
+              const isCompleted = job.status === 'completed';
+              const isEnRoute = job.status === 'en_route';
+              const hasDeposit = Number(job.depositPaid) > 0;
+              const balanceDue =
+                job.balanceDue !== undefined
+                  ? Number(job.balanceDue)
+                  : Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
+
+              return (
+                <div
+                  key={job._id}
+                  onClick={() => handleOpenEditModal(job)}
+                  className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs hover:shadow-md transition space-y-4 cursor-pointer"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-slate-900 text-base">{job.customerName}</span>
+                        <span className="text-xs font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                          {job.jobNumber}
+                        </span>
+                        <span
+                          className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                            isCompleted
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : isEnRoute
+                              ? 'bg-orange-100 text-orange-800 animate-pulse flex items-center gap-1'
+                              : job.status === 'in_progress'
+                              ? 'bg-amber-100 text-amber-800'
+                              : job.status === 'reminder_sent'
+                              ? 'bg-blue-100 text-blue-800'
+                              : job.status === 'cancelled'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {isEnRoute ? (
+                            <>
+                              <Flame className="w-3 h-3 text-orange-600" /> En Route (ETA: {job.etaMinutes || 25}m)
+                            </>
+                          ) : (
+                            job.status?.toUpperCase().replace('_', ' ') || 'SCHEDULED'
+                          )}
+                        </span>
+
+                        {job.tax > 0 ? (
+                          <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">
+                            5% GST
+                          </span>
                         ) : (
-                          job.status?.toUpperCase() || 'SCHEDULED'
+                          <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                            No GST
+                          </span>
                         )}
-                      </span>
+                      </div>
 
-                      {job.tax > 0 ? (
-                        <span className="text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">
-                          5% GST
+                      <div className="text-xs text-slate-600 font-medium flex items-center gap-2 flex-wrap">
+                        <span className="text-blue-700 font-semibold">{job.title}</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <MapPin className="w-3 h-3" />
+                          {job.address}
                         </span>
-                      ) : (
-                        <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                          No GST
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="text-xs text-slate-600 font-medium flex items-center gap-2 flex-wrap">
-                      <span className="text-blue-700 font-semibold">{job.title}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1 text-slate-500">
-                        <MapPin className="w-3 h-3" />
-                        {job.address}
-                      </span>
-                    </div>
-
-                    {/* Notes Snippet */}
-                    {(job.notes || job.customerNotes) && (
-                      <div className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-start gap-1.5">
-                        <span className="font-bold text-slate-700">📝 Notes:</span>
-                        <span className="text-slate-600 line-clamp-1">{job.notes || job.customerNotes}</span>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <div className="text-xs text-slate-400 font-medium">Scheduled Booking</div>
-                      <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5 justify-end">
-                        <Clock className="w-3.5 h-3.5 text-blue-600" />
-                        {new Date(job.scheduledDate).toLocaleDateString()} @ {job.scheduledTime}
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-xs text-slate-400 font-medium">Total Value</div>
-                      <div className="text-base font-black text-slate-900">
-                        ${(Number(job.totalAmount) || 0).toFixed(2)}
-                      </div>
-                      {hasDeposit && (
-                        <div className="text-[10px] text-emerald-700 font-bold">
-                          Dep: ${(Number(job.depositPaid) || 0).toFixed(2)} {job.depositCollectedBy ? `(with ${job.depositCollectedBy}${job.depositPaymentMethod ? ` • ${job.depositPaymentMethod}` : ''})` : ''} | Due: ${balanceDue.toFixed(2)}
+                      {/* Notes Snippet */}
+                      {(job.notes || job.customerNotes) && (
+                        <div className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-start gap-1.5">
+                          <span className="font-bold text-slate-700">📝 Notes:</span>
+                          <span className="text-slate-600 line-clamp-1">{job.notes || job.customerNotes}</span>
                         </div>
                       )}
                     </div>
+
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400 font-medium">Scheduled Booking</div>
+                        <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5 justify-end">
+                          <Clock className="w-3.5 h-3.5 text-blue-600" />
+                          {new Date(job.scheduledDate).toLocaleDateString()} @ {job.scheduledTime}
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-xs text-slate-400 font-medium">Total Value</div>
+                        <div className="text-base font-black text-slate-900">
+                          ${(Number(job.totalAmount) || 0).toFixed(2)}
+                        </div>
+                        {hasDeposit && (
+                          <div className="text-[10px] text-emerald-700 font-bold">
+                            Dep: ${(Number(job.depositPaid) || 0).toFixed(2)} {job.depositCollectedBy ? `(${job.depositCollectedBy})` : ''} | Due: ${balanceDue.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dispatch Controls & Work Order PDF */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs pt-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-4 text-slate-500 flex-wrap">
+                      <span className="font-semibold text-slate-700">Crew: {job.assignedCrew}</span>
+                      <span>Duration: ~{job.durationHours || 2.5} hrs</span>
+                      {job.jobCosts > 0 && (
+                        <span className="text-slate-600">Cost: ${(Number(job.jobCosts) || 0).toFixed(2)}</span>
+                      )}
+                      {job.reminderSentAt && (
+                        <span className="text-blue-600 font-semibold">✓ 24h Reminder Sent</span>
+                      )}
+                      {job.enRouteSentAt && (
+                        <span className="text-orange-600 font-semibold">✓ Live ETA Dispatched</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Edit Booking Button */}
+                      <button
+                        onClick={(e) => handleOpenEditModal(job, e)}
+                        className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Edit Booking</span>
+                      </button>
+
+                      {/* Work Order PDF Button */}
+                      <button
+                        onClick={(e) => handleOpenPdfWorkOrder(job, e)}
+                        className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Work Order PDF</span>
+                      </button>
+
+                      {!isCompleted && job.status !== 'cancelled' && (
+                        <>
+                          {/* Day-Before Reminder */}
+                          <button
+                            onClick={(e) => handleSendDayBefore(job._id, e)}
+                            className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>24h Reminder</span>
+                          </button>
+
+                          {/* Crew Leaving Dispatch Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEtaModalJob(job);
+                            }}
+                            className="px-3.5 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition shadow-sm flex items-center gap-1 cursor-pointer"
+                          >
+                            <Flame className="w-3 h-3" />
+                            <span>Dispatch ETA</span>
+                          </button>
+
+                          {/* Complete Job Button */}
+                          <button
+                            onClick={(e) => handleMarkCompleted(job._id, true, e)}
+                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1 cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Complete &amp; Invoice</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
+              );
+            })
+          )}
+        </div>
+      )}
 
-                {/* Dispatch Controls & Work Order PDF */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs pt-1">
-                  <div className="flex items-center gap-4 text-slate-500 flex-wrap">
-                    <span className="font-semibold text-slate-700">Crew: {job.assignedCrew}</span>
-                    <span>Duration: ~{job.durationHours || 2.5} hrs</span>
-                    {job.jobCosts > 0 && (
-                      <span className="text-slate-600">Cost: ${(Number(job.jobCosts) || 0).toFixed(2)}</span>
-                    )}
-                    {job.reminderSentAt && (
-                      <span className="text-blue-600 font-semibold">✓ 24h Reminder Sent</span>
-                    )}
-                    {job.enRouteSentAt && (
-                      <span className="text-orange-600 font-semibold">✓ Live ETA Dispatched</span>
-                    )}
+      {/* EDIT BOOKING MODAL */}
+      {isEditModalOpen && editingJob && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-hidden">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+            {/* Top Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-base sm:text-lg text-slate-900">
+                      Edit Booking ({editingJob.jobNumber})
+                    </h3>
+                    <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                      {editStatus.toUpperCase().replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Update customer details, schedule, line items, deposit holder, notes or status
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDeleteJob(editingJob._id, editingJob.jobNumber)}
+                  className="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 border border-rose-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  title="Delete this booking permanently"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleUpdateJob} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-4 sm:p-6 overflow-y-auto flex-1 text-xs">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+                  {/* LEFT COLUMN: CUSTOMER, SCHEDULE & NOTES */}
+                  <div className="space-y-4">
+                    {/* Status & Customer Info */}
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                      <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                        <User className="w-4 h-4 text-blue-600" />
+                        1. Booking Status &amp; Customer Info
+                      </div>
+
+                      {/* Status Selector */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                          Booking Status:
+                        </label>
+                        <select
+                          value={editStatus}
+                          onChange={(e) => setEditStatus(e.target.value as any)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-800 focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="scheduled">🗓️ Scheduled (Confirmed)</option>
+                          <option value="reminder_sent">📩 Reminder Sent</option>
+                          <option value="en_route">🚚 Crew En Route</option>
+                          <option value="in_progress">⚡ In Progress</option>
+                          <option value="completed">✅ Completed</option>
+                          <option value="cancelled">❌ Cancelled</option>
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5 pt-1">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                            Customer Name:
+                          </label>
+                          <input
+                            type="text"
+                            value={editCustomerName}
+                            onChange={(e) => setEditCustomerName(e.target.value)}
+                            required
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                            Phone Number:
+                          </label>
+                          <input
+                            type="text"
+                            value={editCustomerPhone}
+                            onChange={(e) => setEditCustomerPhone(e.target.value)}
+                            required
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                            Email Address:
+                          </label>
+                          <input
+                            type="email"
+                            value={editCustomerEmail}
+                            onChange={(e) => setEditCustomerEmail(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                            Service Address:
+                          </label>
+                          <input
+                            type="text"
+                            value={editAddress}
+                            onChange={(e) => setEditAddress(e.target.value)}
+                            required
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Schedule & Crew */}
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                      <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-blue-600" />
+                        2. Schedule &amp; Crew Assignment
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                            Scheduled Date:
+                          </label>
+                          <input
+                            type="date"
+                            value={editScheduledDate}
+                            onChange={(e) => setEditScheduledDate(e.target.value)}
+                            required
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                            Start Time:
+                          </label>
+                          <input
+                            type="text"
+                            value={editScheduledTime}
+                            onChange={(e) => setEditScheduledTime(e.target.value)}
+                            placeholder="e.g. 10:00 AM"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                            Estimated Duration:
+                          </label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={editDurationHours}
+                            onChange={(e) => setEditDurationHours(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                            Assigned Crew:
+                          </label>
+                          <input
+                            type="text"
+                            value={editAssignedCrew}
+                            onChange={(e) => setEditAssignedCrew(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dual Notes Section */}
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                      <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        3. Service Notes &amp; Access Details
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                          Internal Crew / Access Notes (gate code, pets, water access):
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={editNotes}
+                          onChange={(e) => setEditNotes(e.target.value)}
+                          placeholder="e.g. Back gate unlocked, water spigot on left side..."
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium resize-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                          Customer Scope Notes (visible on Work Order PDF):
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={editCustomerNotes}
+                          onChange={(e) => setEditCustomerNotes(e.target.value)}
+                          placeholder="e.g. Includes full exterior window wash and gutter flush..."
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium resize-none"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Work Order PDF Button */}
-                    <button
-                      onClick={() => handleOpenPdfWorkOrder(job)}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                      title="View &amp; Print Official Work Order PDF"
-                    >
-                      <Printer className="w-3.5 h-3.5 text-slate-600" />
-                      <span>PDF Work Order</span>
-                    </button>
+                  {/* RIGHT COLUMN: SERVICES, FINANCIALS, DEPOSIT & TOTAL */}
+                  <div className="space-y-4">
+                    {/* Services and Line Items */}
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                          <DollarSign className="w-4 h-4 text-blue-600" />
+                          4. Line Items &amp; Services
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRoofCalcTarget('edit');
+                              setIsRoofCalcOpen(true);
+                            }}
+                            className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition cursor-pointer"
+                          >
+                            🏠 Roof Calculator
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAddEditItem(undefined, 'service')}
+                            className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
+                          >
+                            + Custom Item
+                          </button>
+                        </div>
+                      </div>
 
-                    {!isCompleted && (
-                      <>
-                        {/* Day-Before Reminder */}
-                        <button
-                          onClick={() => handleSendDayBefore(job._id)}
-                          className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                          title="Trigger SMS #3: 24h day-before reminder"
-                        >
-                          <Send className="w-3 h-3" />
-                          <span>24h Reminder</span>
-                        </button>
+                      {/* Items List */}
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {editItems.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <input
+                                type="text"
+                                value={item.service}
+                                onChange={(e) => handleEditItemChange(idx, 'service', e.target.value)}
+                                placeholder="Service name"
+                                className="flex-1 font-bold text-slate-900 border-b border-transparent focus:border-blue-500 outline-none"
+                              />
+                              {editItems.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveEditItem(idx)}
+                                  className="text-slate-300 hover:text-rose-500 cursor-pointer p-0.5"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
 
-                        {/* Crew Leaving Dispatch Button */}
-                        <button
-                          onClick={() => setEtaModalJob(job)}
-                          className="px-3.5 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition shadow-sm flex items-center gap-1 cursor-pointer"
-                          title="Trigger SMS #4: Our crew is on the way with Live ETA"
-                        >
-                          <Flame className="w-3 h-3" />
-                          <span>Dispatch Crew (ETA)</span>
-                        </button>
+                            <input
+                              type="text"
+                              value={item.description}
+                              onChange={(e) => handleEditItemChange(idx, 'description', e.target.value)}
+                              placeholder="Description"
+                              className="w-full text-[11px] text-slate-500 border-b border-transparent focus:border-blue-500 outline-none"
+                            />
 
-                        {/* Complete Job Button */}
-                        <button
-                          onClick={() => handleMarkCompleted(job._id)}
-                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1 cursor-pointer"
-                          title="Trigger SMS #5: Job completed &amp; Auto-generate invoice"
+                            <div className="flex items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-100">
+                              <div className="flex items-center gap-1">
+                                <span>Qty:</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity}
+                                  onChange={(e) => handleEditItemChange(idx, 'quantity', e.target.value)}
+                                  className="w-12 px-1.5 py-0.5 rounded border border-slate-200 text-center font-bold"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span>Price: $</span>
+                                <input
+                                  type="number"
+                                  value={item.unitPrice}
+                                  onChange={(e) => handleEditItemChange(idx, 'unitPrice', e.target.value)}
+                                  className="w-20 px-1.5 py-0.5 rounded border border-slate-200 text-right font-bold"
+                                />
+                              </div>
+                              <div className="font-black text-slate-900">
+                                ${(Number(item.total) || 0).toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Quick Add Preset Service */}
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                          Add Standard Service:
+                        </label>
+                        <select
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            const svc = availableServices.find((s: any) => s.name === e.target.value);
+                            if (svc) handleAddEditItem(svc, 'service');
+                            e.target.value = '';
+                          }}
+                          className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium"
                         >
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Complete &amp; Invoice</span>
-                        </button>
-                      </>
-                    )}
+                          <option value="">+ Select a preset service to add...</option>
+                          {availableServices.map((svc: any, sIdx: number) => (
+                            <option key={sIdx} value={svc.name}>
+                              {svc.name} (${svc.price})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Financial Calculations & Deposit */}
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                      <div className="font-bold text-slate-800 flex items-center justify-between">
+                        <span>5. Pricing, GST &amp; Deposit</span>
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editIncludeGst}
+                            onChange={(e) => setEditIncludeGst(e.target.checked)}
+                            className="w-3.5 h-3.5 accent-blue-600 rounded"
+                          />
+                          <span>Include 5% GST</span>
+                        </label>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                        <div className="flex justify-between text-slate-600">
+                          <span>Subtotal:</span>
+                          <span className="font-bold text-slate-900">${calculateEditSubtotal().toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>GST ({editIncludeGst ? '5%' : '0% Tax Free'}):</span>
+                          <span className="font-bold text-slate-900">${calculateEditTax().toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-900 font-black text-sm pt-1 border-t border-slate-100">
+                          <span>Total Amount:</span>
+                          <span className="text-blue-700">${calculateEditTotal().toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {/* Deposit Section */}
+                      <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-2.5">
+                        <div className="font-bold text-emerald-950 flex items-center justify-between">
+                          <span>Deposit Received ($):</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editDepositPaid}
+                            onChange={(e) => setEditDepositPaid(e.target.value)}
+                            placeholder="0.00"
+                            className="w-28 px-2 py-1 rounded-lg border border-emerald-300 bg-white font-black text-right text-emerald-800"
+                          />
+                        </div>
+
+                        {Number(editDepositPaid) > 0 && (
+                          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-emerald-200/60">
+                            <div>
+                              <label className="text-[10px] font-bold text-emerald-900 block mb-1">
+                                Held By (Owner):
+                              </label>
+                              <select
+                                value={editDepositCollectedBy}
+                                onChange={(e) => setEditDepositCollectedBy(e.target.value)}
+                                className="w-full px-2 py-1 rounded-lg border border-emerald-300 bg-white text-xs font-semibold text-emerald-950"
+                              >
+                                <option value="Charanjeet Brar">Charanjeet Brar</option>
+                                <option value="Manpreet Gill">Manpreet Gill</option>
+                                <option value="Company Bank Account">Company Bank Account (e-Transfer)</option>
+                                <option value="Cash with Crew/Office">Cash with Crew / Office</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-emerald-900 block mb-1">
+                                Payment Method:
+                              </label>
+                              <select
+                                value={editDepositPaymentMethod}
+                                onChange={(e) => setEditDepositPaymentMethod(e.target.value)}
+                                className="w-full px-2 py-1 rounded-lg border border-emerald-300 bg-white text-xs font-semibold text-emerald-950"
+                              >
+                                <option value="e-Transfer">Interac e-Transfer</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Cheque">Cheque</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-center text-xs font-bold text-amber-900 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                          <span>Remaining Balance Due:</span>
+                          <span className="text-sm font-black">${calculateEditBalanceDue().toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {/* Job Cost Tracker */}
+                      <div className="flex items-center justify-between text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200">
+                        <span>Internal Job Cost / Expenses ($):</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editJobCosts}
+                          onChange={(e) => setEditJobCosts(e.target.value)}
+                          placeholder="0.00"
+                          className="w-24 px-2 py-1 rounded-lg border border-slate-200 font-bold text-right text-slate-800"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            );
-          })
-        )}
-      </div>
+
+              {/* Bottom Footer Actions */}
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md shadow-blue-500/20 flex items-center gap-2 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* CREATE NEW BOOKING MODAL (2-COLUMN COMPACT LAYOUT) */}
       {isBookingModalOpen && (
@@ -681,7 +1822,6 @@ export default function JobsPage() {
             <form onSubmit={handleCreateBooking} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-4 sm:p-6 overflow-y-auto flex-1 text-xs">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
-                  
                   {/* LEFT COLUMN: STATUS, CUSTOMER, SCHEDULE & NOTES */}
                   <div className="space-y-4">
                     {/* 1. STATUS & CUSTOMER INFORMATION */}
@@ -750,11 +1890,11 @@ export default function JobsPage() {
                             <select
                               value={selectedCustomerId}
                               onChange={(e) => setSelectedCustomerId(e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-xs focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium"
                             >
                               {customers.map((c) => (
                                 <option key={c._id} value={c._id}>
-                                  {c.name} — {c.phone} | {c.address}, {c.city}
+                                  {c.name} — {c.phone} ({c.address}, {c.city})
                                 </option>
                               ))}
                             </select>
@@ -764,58 +1904,81 @@ export default function JobsPage() {
                         <div className="space-y-2.5 pt-1">
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">Full Name *</label>
+                              <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                                Full Name:
+                              </label>
                               <input
                                 type="text"
-                                required
+                                placeholder="e.g. Gurmukh Sandhu"
                                 value={newCustName}
                                 onChange={(e) => setNewCustName(e.target.value)}
-                                placeholder="John Smith"
                                 className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
                               />
                             </div>
                             <div>
-                              <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">Phone Number *</label>
+                              <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                                Phone (SMS):
+                              </label>
                               <input
                                 type="text"
-                                required
+                                placeholder="e.g. 604-555-0199"
                                 value={newCustPhone}
                                 onChange={(e) => setNewCustPhone(e.target.value)}
-                                placeholder="(604) 555-0199"
                                 className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
                               />
                             </div>
                           </div>
 
-                          <div>
-                            <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">Email Address</label>
-                            <input
-                              type="email"
-                              value={newCustEmail}
-                              onChange={(e) => setNewCustEmail(e.target.value)}
-                              placeholder="john@example.com"
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
-                            />
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                                Email:
+                              </label>
+                              <input
+                                type="email"
+                                placeholder="client@example.com"
+                                value={newCustEmail}
+                                onChange={(e) => setNewCustEmail(e.target.value)}
+                                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                                Property Type:
+                              </label>
+                              <select
+                                value={newCustType}
+                                onChange={(e) => setNewCustType(e.target.value as any)}
+                                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                              >
+                                <option value="Residential">Residential</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Strata">Strata</option>
+                              </select>
+                            </div>
                           </div>
 
-                          <div className="grid grid-cols-12 gap-2">
-                            <div className="col-span-7">
-                              <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">Street Address</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="col-span-2">
+                              <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                                Street Address:
+                              </label>
                               <input
                                 type="text"
+                                placeholder="e.g. 14220 72nd Ave"
                                 value={newCustAddress}
                                 onChange={(e) => setNewCustAddress(e.target.value)}
-                                placeholder="1234 80th Ave"
                                 className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
                               />
                             </div>
-                            <div className="col-span-5">
-                              <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">City</label>
+                            <div>
+                              <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                                City:
+                              </label>
                               <input
                                 type="text"
                                 value={newCustCity}
                                 onChange={(e) => setNewCustCity(e.target.value)}
-                                placeholder="Surrey"
                                 className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
                               />
                             </div>
@@ -824,400 +1987,355 @@ export default function JobsPage() {
                       )}
                     </div>
 
-                    {/* 2. BOOKING SCHEDULE & CREW */}
+                    {/* 2. SCHEDULE & CREW ASSIGNMENT */}
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                       <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4 text-blue-600" />
+                        <Clock className="w-4 h-4 text-blue-600" />
                         2. Schedule &amp; Crew Assignment
                       </span>
 
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">Service Date *</label>
+                          <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                            Service Date:
+                          </label>
                           <input
                             type="date"
-                            required
                             value={scheduledDate}
                             onChange={(e) => setScheduledDate(e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold"
+                            required
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
                           />
                         </div>
-
                         <div>
-                          <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">Arrival Time *</label>
+                          <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                            Arrival Window / Time:
+                          </label>
                           <select
                             value={scheduledTime}
                             onChange={(e) => setScheduledTime(e.target.value)}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold text-xs"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
                           >
-                            <option value="08:00 AM">08:00 AM</option>
-                            <option value="09:00 AM">09:00 AM</option>
-                            <option value="10:00 AM">10:00 AM</option>
-                            <option value="11:30 AM">11:30 AM</option>
-                            <option value="01:00 PM">01:00 PM</option>
-                            <option value="02:30 PM">02:30 PM</option>
-                            <option value="04:00 PM">04:00 PM</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">Duration</label>
-                          <select
-                            value={durationHours}
-                            onChange={(e) => setDurationHours(Number(e.target.value))}
-                            className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold text-xs"
-                          >
-                            <option value="1.5">1.5 hrs</option>
-                            <option value="2.0">2.0 hrs</option>
-                            <option value="2.5">2.5 hrs</option>
-                            <option value="3.0">3.0 hrs</option>
-                            <option value="4.0">4.0 hrs</option>
+                            <option value="08:00 AM">08:00 AM (Early Slot)</option>
+                            <option value="10:00 AM">10:00 AM (Morning Slot)</option>
+                            <option value="01:00 PM">01:00 PM (Afternoon Slot)</option>
+                            <option value="03:30 PM">03:30 PM (Late Afternoon)</option>
                           </select>
                         </div>
                       </div>
 
-                      <div>
-                        <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">Assigned Crew / Lead Tech:</label>
-                        <select
-                          value={assignedCrew}
-                          onChange={(e) => setAssignedCrew(e.target.value)}
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold text-xs"
-                        >
-                          <option value="H&H Lead Crew (Mike & Dave)">H&H Lead Crew (Mike & Dave)</option>
-                          {settings?.crewMembers?.map((c: any, i: number) => (
-                            <option key={i} value={`${c.name} (${c.role || 'Tech'} - $${c.hourlyRate}/hr)`}>
-                              {c.name} ({c.role || 'Tech'} — ${c.hourlyRate}/hr)
-                            </option>
-                          ))}
-                          <option value="Crew Beta (Vancouver Central)">Crew Beta (Vancouver Central)</option>
-                        </select>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                            Duration (Hours):
+                          </label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={durationHours}
+                            onChange={(e) => setDurationHours(Number(e.target.value))}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                            Assigned Crew:
+                          </label>
+                          <select
+                            value={assignedCrew}
+                            onChange={(e) => setAssignedCrew(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
+                          >
+                            <option value="H&H Lead Crew (Mike & Dave)">H&amp;H Lead Crew (Mike &amp; Dave)</option>
+                            <option value="Crew Beta (Alex & Sam)">Crew Beta (Alex &amp; Sam)</option>
+                            <option value="Pressure Wash Specialist Crew">Pressure Wash Specialist Crew</option>
+                            <option value="Roof & Gutter Team">Roof &amp; Gutter Team</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
 
-                    {/* 3. NOTES SECTION */}
+                    {/* 3. DUAL NOTES (ACCESS & WORK SCOPE) */}
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                       <span className="font-bold text-slate-800 flex items-center gap-1.5">
                         <FileText className="w-4 h-4 text-blue-600" />
-                        3. Notes &amp; Special Instructions
+                        3. Job Notes &amp; Access Details
                       </span>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">
-                          Internal / Access Notes (Crew Gate Code, Pets, Parking):
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                          Internal Crew / Access Notes (gate code, pets, parking):
                         </label>
                         <textarea
                           rows={2}
                           value={bookingNotes}
                           onChange={(e) => setBookingNotes(e.target.value)}
-                          placeholder="Side gate code #1234, watch for pets in backyard, outdoor water tap is active..."
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium resize-none text-xs"
+                          placeholder="e.g. Back gate code #1234, watch for golden retriever..."
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium resize-none"
                         />
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-0.5 text-[11px]">
-                          Customer Scope Notes (Printed on Work Order / Receipt):
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                          Customer Scope Notes (printed on Work Order):
                         </label>
                         <textarea
                           rows={2}
                           value={customerNotes}
                           onChange={(e) => setCustomerNotes(e.target.value)}
-                          placeholder="All services guaranteed per H&H quality checklist. Site rinsed and cleaned before departure."
-                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 font-medium resize-none text-xs"
+                          placeholder="e.g. Focus on north-facing moss, full perimeter flush included..."
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium resize-none"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* RIGHT COLUMN: SERVICES, PRICING, DEPOSIT & TOTALS */}
+                  {/* RIGHT COLUMN: SERVICES, FINANCIALS, DEPOSIT & TOTAL */}
                   <div className="space-y-4">
+                    {/* 4. LINE ITEMS & SERVICES */}
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                          <Wrench className="w-4 h-4 text-blue-600" />
-                          4. Services &amp; Extra Line Items
+                          <DollarSign className="w-4 h-4 text-blue-600" />
+                          4. Services &amp; Line Items
                         </span>
-
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={() => setIsRoofCalcOpen(true)}
-                            className="text-[11px] font-bold px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 flex items-center gap-1 transition cursor-pointer"
+                            onClick={() => {
+                              setRoofCalcTarget('new');
+                              setIsRoofCalcOpen(true);
+                            }}
+                            className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition cursor-pointer"
                           >
-                            <Grid3X3 className="w-3 h-3" /> + Roof Matrix
+                            🏠 Roof Calculator
                           </button>
-
                           <button
                             type="button"
                             onClick={() => handleAddItem(undefined, 'service')}
-                            className="text-[11px] text-slate-700 font-bold hover:bg-slate-100 flex items-center gap-1 border border-slate-200 px-2 py-1 rounded-lg bg-white cursor-pointer"
+                            className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
                           >
-                            <Plus className="w-3 h-3" /> + Custom Svc
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleAddItem(undefined, 'cost')}
-                            className="text-[11px] text-amber-800 font-bold bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 px-2 py-1 rounded-lg cursor-pointer"
-                            title="Add extra item, rental equipment, material or dump fee"
-                          >
-                            <Plus className="w-3 h-3 text-amber-600" /> + Extra Cost/Item
+                            + Custom
                           </button>
                         </div>
                       </div>
 
-                      {/* Searchable Standard Services Picker */}
-                      <div className="space-y-2">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="Search standard service (House wash, Gutter, Window, Siding...)"
-                            value={serviceSearchQuery}
-                            onChange={(e) => setServiceSearchQuery(e.target.value)}
-                            className="w-full pl-7 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
-                          />
-                          <div className="absolute left-2.5 top-2 text-slate-400 pointer-events-none text-xs">
-                            🔍
-                          </div>
-                        </div>
-
-                        {/* Filtered Chips */}
-                        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
-                          {availableServices
-                            .filter((svc: any) =>
-                              svc.name.toLowerCase().includes(serviceSearchQuery.toLowerCase())
-                            )
-                            .map((svc: any, idx: number) => {
-                              const price = svc.price || svc.defaultPrice || 200;
-                              return (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => handleAddItem(svc)}
-                                  className="group px-2 py-0.5 rounded-md bg-white hover:bg-blue-600 border border-slate-200 hover:border-blue-600 text-slate-700 hover:text-white transition-all text-left flex items-center gap-1 shadow-2xs cursor-pointer text-[11px]"
-                                >
-                                  <span className="font-semibold">{svc.name}</span>
-                                  <span className="font-bold text-blue-700 group-hover:text-white">
-                                    ${price}
-                                  </span>
-                                  <Plus className="w-2.5 h-2.5 text-blue-500 group-hover:text-white" />
-                                </button>
-                              );
-                            })}
-                        </div>
-                      </div>
-
-                      {/* Line Items List */}
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      {/* Items List */}
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                         {items.map((item, idx) => (
-                          <div key={idx} className="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1.5">
-                            <div className="grid grid-cols-12 gap-1.5 items-center">
-                              <div className="col-span-6">
-                                <input
-                                  type="text"
-                                  value={item.service}
-                                  onChange={(e) => handleItemChange(idx, 'service', e.target.value)}
-                                  placeholder="Service / Extra item name"
-                                  className="w-full px-2 py-1 rounded-md border border-slate-300 bg-slate-50 font-semibold text-xs"
-                                />
-                              </div>
-                              <div className="col-span-2">
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={item.quantity}
-                                  onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                                  placeholder="Qty"
-                                  className="w-full px-1.5 py-1 rounded-md border border-slate-300 bg-white text-xs text-center"
-                                />
-                              </div>
-                              <div className="col-span-3">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={item.unitPrice}
-                                  onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
-                                  placeholder="Price ($)"
-                                  className="w-full px-1.5 py-1 rounded-md border border-slate-300 bg-white text-xs text-right font-bold"
-                                />
-                              </div>
-                              <div className="col-span-1 text-center">
+                          <div
+                            key={idx}
+                            className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <input
+                                type="text"
+                                value={item.service}
+                                onChange={(e) => handleItemChange(idx, 'service', e.target.value)}
+                                placeholder="Service name"
+                                className="flex-1 font-bold text-slate-900 border-b border-transparent focus:border-blue-500 outline-none"
+                              />
+                              {items.length > 1 && (
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveItem(idx)}
-                                  className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                                  className="text-slate-300 hover:text-rose-500 cursor-pointer p-0.5"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
-                              </div>
+                              )}
                             </div>
 
                             <input
                               type="text"
                               value={item.description}
                               onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
-                              placeholder="Description / scope notes..."
-                              className="w-full px-2 py-0.5 rounded-md border border-slate-200 bg-white text-[10px] text-slate-600"
+                              placeholder="Description"
+                              className="w-full text-[11px] text-slate-500 border-b border-transparent focus:border-blue-500 outline-none"
                             />
+
+                            <div className="flex items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-100">
+                              <div className="flex items-center gap-1">
+                                <span>Qty:</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity}
+                                  onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                                  className="w-12 px-1.5 py-0.5 rounded border border-slate-200 text-center font-bold"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span>Price: $</span>
+                                <input
+                                  type="number"
+                                  value={item.unitPrice}
+                                  onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
+                                  className="w-20 px-1.5 py-0.5 rounded border border-slate-200 text-right font-bold"
+                                />
+                              </div>
+                              <div className="font-black text-slate-900">
+                                ${(Number(item.total) || 0).toFixed(2)}
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
+
+                      {/* Quick Add Presets */}
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                          Quick Add Standard Service:
+                        </label>
+                        <select
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            const svc = availableServices.find((s: any) => s.name === e.target.value);
+                            if (svc) handleAddItem(svc, 'service');
+                            e.target.value = '';
+                          }}
+                          className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium"
+                        >
+                          <option value="">+ Select a preset service to add...</option>
+                          {availableServices.map((svc: any, sIdx: number) => (
+                            <option key={sIdx} value={svc.name}>
+                              {svc.name} (${svc.price})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
-                    {/* 5. PRICING, GST OPTION, DEPOSIT & SUMMARY */}
+                    {/* 5. FINANCIALS, GST & DEPOSIT */}
                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                      <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                        <DollarSign className="w-4 h-4 text-emerald-600" />
-                        5. Price, GST &amp; Deposit
-                      </span>
+                      <div className="font-bold text-slate-800 flex items-center justify-between">
+                        <span>5. Pricing, GST &amp; Deposit</span>
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={includeGst}
+                            onChange={(e) => setIncludeGst(e.target.checked)}
+                            className="w-3.5 h-3.5 accent-blue-600 rounded"
+                          />
+                          <span>Include 5% GST</span>
+                        </label>
+                      </div>
 
-                      <div className="space-y-2 text-xs">
-                        <div className="flex justify-between text-slate-700">
+                      <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                        <div className="flex justify-between text-slate-600">
                           <span>Subtotal:</span>
-                          <span className="font-semibold">${(Number(calculateSubtotal()) || 0).toFixed(2)}</span>
+                          <span className="font-bold text-slate-900">${calculateSubtotal().toFixed(2)}</span>
                         </div>
-
-                        {/* GST Optional Toggle */}
-                        <div className="flex items-center justify-between py-1 border-t border-b border-slate-200">
-                          <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={includeGst}
-                              onChange={(e) => setIncludeGst(e.target.checked)}
-                              className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-[11px] font-bold text-slate-800">
-                              Apply GST ({settings?.gstRate || 5}% Tax)
-                            </span>
-                          </label>
-                          <span className="font-semibold text-slate-900">
-                            ${(Number(calculateTax()) || 0).toFixed(2)}
-                          </span>
+                        <div className="flex justify-between text-slate-600">
+                          <span>GST ({includeGst ? '5%' : '0% Tax Free'}):</span>
+                          <span className="font-bold text-slate-900">${calculateTax().toFixed(2)}</span>
                         </div>
-
-                        <div className="flex justify-between font-bold text-sm text-slate-900 pt-0.5">
-                          <span>Total Booking Price:</span>
-                          <span className="text-blue-600">${(Number(calculateTotal()) || 0).toFixed(2)}</span>
+                        <div className="flex justify-between text-slate-900 font-black text-sm pt-1 border-t border-slate-100">
+                          <span>Total Amount:</span>
+                          <span className="text-blue-700">${calculateTotal().toFixed(2)}</span>
                         </div>
+                      </div>
 
-                        {/* Deposit Taken Field */}
-                        <div className="pt-2 border-t border-slate-200 space-y-2">
-                          <div className="grid grid-cols-2 gap-2 items-center">
-                            <div>
-                              <label className="font-bold text-emerald-800 block text-[11px]">
-                                Deposit Taken / Paid ($):
-                              </label>
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={depositPaid}
-                                onChange={(e) => setDepositPaid(e.target.value)}
-                                placeholder="0.00"
-                                className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-white font-bold text-emerald-900 text-xs"
-                              />
-                            </div>
-
-                            <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-right">
-                              <span className="text-[10px] font-bold text-emerald-800 uppercase block">
-                                Balance Due:
-                              </span>
-                              <span className="text-sm font-black text-emerald-950">
-                                ${calculateBalanceDue().toFixed(2)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Owner who collected / holds the deposit */}
-                          {Number(depositPaid) > 0 && (
-                            <div className="grid grid-cols-2 gap-2 pt-1 bg-white p-2.5 rounded-xl border border-emerald-200/80 animate-in fade-in">
-                              <div>
-                                <label className="font-bold text-slate-700 block text-[10px] mb-0.5">
-                                  Deposit Received / Held By (Owner):
-                                </label>
-                                <select
-                                  value={depositCollectedBy}
-                                  onChange={(e) => setDepositCollectedBy(e.target.value)}
-                                  className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-slate-50 font-bold text-slate-800 text-[11px] focus:ring-2 focus:ring-blue-500"
-                                >
-                                  <option value="Charanjeet Brar">👤 Charanjeet Brar (604-781-0546)</option>
-                                  <option value="Manpreet Gill">👤 Manpreet Gill (778-829-5911)</option>
-                                  <option value="Company Account (e-Transfer)">🏦 Company Account (info@hnhpros.ca)</option>
-                                  <option value="Cash with Crew/Office">💵 Cash with Crew/Office</option>
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="font-bold text-slate-700 block text-[10px] mb-0.5">
-                                  Payment Method:
-                                </label>
-                                <select
-                                  value={depositPaymentMethod}
-                                  onChange={(e) => setDepositPaymentMethod(e.target.value)}
-                                  className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-slate-50 font-medium text-slate-800 text-[11px] focus:ring-2 focus:ring-blue-500"
-                                >
-                                  <option value="e-Transfer">Interac e-Transfer</option>
-                                  <option value="Cash">Cash</option>
-                                  <option value="Credit Card / Stripe">Credit Card (Stripe)</option>
-                                  <option value="Cheque">Cheque</option>
-                                </select>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Optional Internal Job Cost / Expenses */}
-                        <div className="pt-1">
-                          <label className="font-semibold text-slate-600 block text-[10px]">
-                            Internal Job Cost / Expenses (Contractor/Material Cost - Optional):
-                          </label>
+                      {/* Deposit Section */}
+                      <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl space-y-2.5">
+                        <div className="font-bold text-emerald-950 flex items-center justify-between">
+                          <span>Deposit Received ($):</span>
                           <input
                             type="number"
-                            min="0"
                             step="0.01"
-                            value={jobCosts}
-                            onChange={(e) => setJobCosts(e.target.value)}
-                            placeholder="0.00 (materials, dump fees)"
-                            className="w-full px-2.5 py-1 rounded-lg border border-slate-200 bg-white font-medium text-slate-700 text-xs"
+                            value={depositPaid}
+                            onChange={(e) => setDepositPaid(e.target.value)}
+                            placeholder="0.00"
+                            className="w-28 px-2 py-1 rounded-lg border border-emerald-300 bg-white font-black text-right text-emerald-800"
                           />
                         </div>
 
-                        {/* Confirmation Dispatch Sequence */}
-                        <div className="pt-2 border-t border-slate-200">
-                          <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={sendConfirmationNow}
-                              onChange={(e) => setSendConfirmationNow(e.target.checked)}
-                              className="w-3.5 h-3.5 rounded text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-[11px] font-semibold text-slate-800">
-                              📱 Send Booking Confirmation &amp; 24h Reminder automatically
-                            </span>
-                          </label>
+                        {Number(depositPaid) > 0 && (
+                          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-emerald-200/60">
+                            <div>
+                              <label className="text-[10px] font-bold text-emerald-900 block mb-1">
+                                Held By (Owner):
+                              </label>
+                              <select
+                                value={depositCollectedBy}
+                                onChange={(e) => setDepositCollectedBy(e.target.value)}
+                                className="w-full px-2 py-1 rounded-lg border border-emerald-300 bg-white text-xs font-semibold text-emerald-950"
+                              >
+                                <option value="Charanjeet Brar">Charanjeet Brar</option>
+                                <option value="Manpreet Gill">Manpreet Gill</option>
+                                <option value="Company Bank Account">Company Bank Account (e-Transfer)</option>
+                                <option value="Cash with Crew/Office">Cash with Crew / Office</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-emerald-900 block mb-1">
+                                Payment Method:
+                              </label>
+                              <select
+                                value={depositPaymentMethod}
+                                onChange={(e) => setDepositPaymentMethod(e.target.value)}
+                                className="w-full px-2 py-1 rounded-lg border border-emerald-300 bg-white text-xs font-semibold text-emerald-950"
+                              >
+                                <option value="e-Transfer">Interac e-Transfer</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Cheque">Cheque</option>
+                              </select>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-center text-xs font-bold text-amber-900 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                          <span>Remaining Balance Due:</span>
+                          <span className="text-sm font-black">${calculateBalanceDue().toFixed(2)}</span>
                         </div>
+                      </div>
+
+                      {/* Job Cost Tracker */}
+                      <div className="flex items-center justify-between text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200">
+                        <span>Internal Job Cost / Expenses ($):</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={jobCosts}
+                          onChange={(e) => setJobCosts(e.target.value)}
+                          placeholder="0.00"
+                          className="w-24 px-2 py-1 rounded-lg border border-slate-200 font-bold text-right text-slate-800"
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Fixed Footer */}
-              <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2 shrink-0 rounded-b-3xl">
-                <button
-                  type="button"
-                  onClick={() => setIsBookingModalOpen(false)}
-                  className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 text-xs font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md flex items-center gap-1.5 cursor-pointer"
-                >
-                  <CalendarCheck className="w-4 h-4" />
-                  <span>Save &amp; Confirm Booking</span>
-                </button>
+              {/* Bottom Footer Actions */}
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendConfirmationNow}
+                    onChange={(e) => setSendConfirmationNow(e.target.checked)}
+                    className="w-4 h-4 accent-blue-600 rounded"
+                  />
+                  <span>Dispatch SMS Confirmation to Customer Immediately</span>
+                </label>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsBookingModalOpen(false)}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md shadow-blue-500/20 flex items-center gap-2 cursor-pointer"
+                  >
+                    <CalendarCheck className="w-4 h-4" />
+                    <span>Create &amp; Confirm Booking</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -1226,21 +2344,22 @@ export default function JobsPage() {
 
       {/* ROOF MATRIX CALCULATOR MODAL */}
       {isRoofCalcOpen && (
-        <div className="fixed inset-0 z-60 bg-slate-900/70 backdrop-blur-xs overflow-y-auto flex justify-center items-start p-4 sm:p-6 sm:py-10">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 my-auto">
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Grid3X3 className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-base text-slate-900">Roof Cleaning Matrix Calculator</h3>
-              </div>
-              <button onClick={() => setIsRoofCalcOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <h3 className="font-bold text-base text-slate-900">Roof &amp; Gutter Package Calculator</h3>
+              <button
+                type="button"
+                onClick={() => setIsRoofCalcOpen(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4 text-xs">
+            <div className="space-y-3 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">House Size (Square Footage):</label>
+                <label className="font-semibold text-slate-700 block mb-1">Square Footage Size:</label>
                 <select
                   value={roofSize}
                   onChange={(e) => setRoofSize(e.target.value as any)}
@@ -1249,7 +2368,7 @@ export default function JobsPage() {
                   <option value="small">Small (under 1,500 sq ft)</option>
                   <option value="medium">Medium (1,500 to 2,500 sq ft)</option>
                   <option value="large">Large (2,500 to 3,500 sq ft)</option>
-                  <option value="xLarge">X-Large (3,500 sq ft & up)</option>
+                  <option value="xLarge">X-Large (3,500 sq ft &amp; up)</option>
                 </select>
               </div>
 
