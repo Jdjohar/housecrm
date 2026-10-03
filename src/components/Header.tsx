@@ -72,6 +72,23 @@ export default function Header() {
             <span>{clearNotice ? 'Database Cleared!' : clearing ? 'Clearing...' : 'Clear Data'}</span>
           </button>
 
+          {/* Logout Button */}
+          <button
+            onClick={async () => {
+              try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+              } catch (e) {
+                console.error(e);
+                window.location.href = '/login';
+              }
+            }}
+            className="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition border border-slate-200"
+            title="Sign out of CRM"
+          >
+            <span>Log out</span>
+          </button>
+
           <a
             href="https://hnhpros.ca/"
             target="_blank"

@@ -8,14 +8,15 @@ import Header from './Header';
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // Check if public page (Customer estimate portal, invoice portal, or review page)
+  // Check if public page (Login, Customer estimate portal, invoice portal, or review page)
   const isPublicPage =
+    pathname === '/login' ||
     pathname.startsWith('/portal') ||
     pathname.startsWith('/review') ||
     pathname.startsWith('/feedback');
 
   if (isPublicPage) {
-    return <main className="min-h-screen bg-slate-100">{children}</main>;
+    return <main className="min-h-screen">{children}</main>;
   }
 
   return (

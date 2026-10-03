@@ -319,16 +319,36 @@ export default function SettingsPage() {
     setSettings((prev: any) => ({ ...prev, crewMembers: updated }));
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPassword || newPassword !== confirmPassword) {
       setPasswordNotice('Passwords do not match or are empty.');
       return;
     }
-    setPasswordNotice('Password updated successfully!');
-    setNewPassword('');
-    setConfirmPassword('');
-    setTimeout(() => setPasswordNotice(null), 3000);
+    if (newPassword.length < 6) {
+      setPasswordNotice('Password must be at least 6 characters.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPasswordNotice('Password updated successfully in database!');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setPasswordNotice(data.error || 'Failed to update password.');
+      }
+    } catch (err: any) {
+      setPasswordNotice('Network error while updating password.');
+    } finally {
+      setTimeout(() => setPasswordNotice(null), 4000);
+    }
   };
 
   return (

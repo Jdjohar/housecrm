@@ -168,15 +168,32 @@ export default function Sidebar() {
         })}
       </div>
 
-      {/* Footer Banner */}
-      <div className="p-3 m-3 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs">
-        <div className="flex items-center gap-2 text-slate-200 font-semibold mb-1">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          Auto-SMS Dispatcher
+      {/* Footer Banner & User Profile */}
+      <div className="p-3 m-3 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-[10px]">
+              A
+            </div>
+            <div>
+              <div className="font-bold text-white text-[11px] leading-none">Admin</div>
+              <div className="text-[9px] text-emerald-400">Online</div>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+              } catch (e) {
+                window.location.href = '/login';
+              }
+            }}
+            className="text-[10px] text-slate-400 hover:text-rose-400 font-medium px-2 py-1 rounded bg-slate-900/60 border border-slate-700 hover:border-rose-500/40 transition"
+          >
+            Log out
+          </button>
         </div>
-        <p className="text-slate-400 text-[11px] leading-relaxed">
-          Active: 8 Sequence triggers & Google 5★ Review Filter connected.
-        </p>
       </div>
     </aside>
   );
