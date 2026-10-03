@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Invoice from '@/models/Invoice';
+import Job from '@/models/Job';
 import { dispatchAutomatedMessage } from '@/lib/automationDispatcher';
 
 export async function GET(
@@ -94,6 +95,11 @@ export async function PUT(
       }
 
       await invoice.save();
+
+      // Sync linked Job balanceDue
+      if (invoice.jobId) {
+        await Job.findByIdAndUpdate(invoice.jobId, { balanceDue: invoice.balanceDue });
+      }
 
       let payNotif = null;
       let reviewNotif = null;

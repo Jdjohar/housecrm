@@ -31,6 +31,7 @@ import EstimatePdfDocument from '@/components/EstimatePdfDocument';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,24 @@ export default function JobsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'upcoming' | 'done' | 'unpaid' | 'cancelled'>('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+
+  // Helper: Accurate Balance Due by cross-referencing Invoices
+  const getJobBalanceDue = (job: any, invoicesList: any[] = invoices) => {
+    if (job.status === 'cancelled') return 0;
+    const linkedInvoice = invoicesList.find(
+      (inv) => inv.jobId && (String(inv.jobId._id || inv.jobId) === String(job._id))
+    );
+    if (linkedInvoice) {
+      if (linkedInvoice.status === 'paid' || Number(linkedInvoice.balanceDue) <= 0.01) {
+        return 0;
+      }
+      return Number(linkedInvoice.balanceDue) || 0;
+    }
+    if (job.balanceDue !== undefined && job.balanceDue !== null) {
+      return Number(job.balanceDue) || 0;
+    }
+    return Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
+  };
 
   // COMPLETE JOB & COLLECT PAYMENT MODAL STATE
   const [completeModalJob, setCompleteModalJob] = useState<any | null>(null);
@@ -135,16 +154,19 @@ export default function JobsPage() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const [jobRes, custRes, setRes] = await Promise.all([
+      const [jobRes, custRes, setRes, invRes] = await Promise.all([
         fetch('/api/jobs'),
         fetch('/api/customers'),
         fetch('/api/settings'),
+        fetch('/api/invoices'),
       ]);
       const jobData = await jobRes.json();
       const custData = await custRes.json();
       const setData = await setRes.json();
+      const invData = await invRes.json();
 
       if (jobData.data) setJobs(jobData.data);
+      if (invData.data) setInvoices(invData.data);
       if (custData.data) {
         setCustomers(custData.data);
         if (custData.data.length > 0 && !selectedCustomerId) {
@@ -551,10 +573,7 @@ export default function JobsPage() {
   // Action: Open Complete Job & Payment Modal
   const handleOpenCompleteModal = (job: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    const balance =
-      job.balanceDue !== undefined
-        ? Number(job.balanceDue)
-        : Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
+    const balance = getJobBalanceDue(job, invoices);
 
     setCompleteModalJob(job);
     setCompletionNotes('All services completed per H&H quality checklist. Site cleaned and inspected.');
@@ -678,10 +697,7 @@ export default function JobsPage() {
       depositPaid: Number(job.depositPaid) || 0,
       depositCollectedBy: job.depositCollectedBy || '',
       depositPaymentMethod: job.depositPaymentMethod || '',
-      balanceDue:
-        job.balanceDue !== undefined
-          ? Number(job.balanceDue)
-          : Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0)),
+      balanceDue: getJobBalanceDue(job, invoices),
       customerNotes: job.customerNotes || '',
       notes: job.notes || 'Scheduled Job Work Order. Service guaranteed by H&H House Maintenance.',
       items:
@@ -722,10 +738,7 @@ export default function JobsPage() {
       return job.status === 'completed';
     }
     if (filterTab === 'unpaid') {
-      const balance =
-        job.balanceDue !== undefined
-          ? Number(job.balanceDue)
-          : (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0);
+      const balance = getJobBalanceDue(job, invoices);
       return balance > 0.01 && job.status !== 'cancelled';
     }
     if (filterTab === 'cancelled') {
@@ -741,10 +754,7 @@ export default function JobsPage() {
   ).length;
   const countDone = jobs.filter((j) => j.status === 'completed').length;
   const countUnpaid = jobs.filter((j) => {
-    const b =
-      j.balanceDue !== undefined
-        ? Number(j.balanceDue)
-        : (Number(j.totalAmount) || 0) - (Number(j.depositPaid) || 0);
+    const b = getJobBalanceDue(j, invoices);
     return b > 0.01 && j.status !== 'cancelled';
   }).length;
   const countCancelled = jobs.filter((j) => j.status === 'cancelled').length;
@@ -964,10 +974,7 @@ export default function JobsPage() {
                     const isEnRoute = job.status === 'en_route';
                     const isCancelled = job.status === 'cancelled';
                     const hasDeposit = Number(job.depositPaid) > 0;
-                    const balanceDue =
-                      job.balanceDue !== undefined
-                        ? Number(job.balanceDue)
-                        : Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
+                    const balanceDue = getJobBalanceDue(job, invoices);
 
                     return (
                       <tr
@@ -1108,7 +1115,7 @@ export default function JobsPage() {
                                 : 'bg-amber-50 text-amber-800 border border-amber-200'
                             }`}
                           >
-                            Due: ${balanceDue.toFixed(2)}
+                            {balanceDue <= 0.01 ? '✓ Paid In Full' : `Due: $${balanceDue.toFixed(2)}`}
                           </div>
                         </td>
 
@@ -1187,10 +1194,7 @@ export default function JobsPage() {
               const isCompleted = job.status === 'completed';
               const isEnRoute = job.status === 'en_route';
               const hasDeposit = Number(job.depositPaid) > 0;
-              const balanceDue =
-                job.balanceDue !== undefined
-                  ? Number(job.balanceDue)
-                  : Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
+              const balanceDue = getJobBalanceDue(job, invoices);
 
               return (
                 <div
@@ -1272,9 +1276,13 @@ export default function JobsPage() {
                         <div className="text-base font-black text-slate-900">
                           ${(Number(job.totalAmount) || 0).toFixed(2)}
                         </div>
-                        {hasDeposit && (
+                        {hasDeposit ? (
                           <div className="text-[10px] text-emerald-700 font-bold">
-                            Dep: ${(Number(job.depositPaid) || 0).toFixed(2)} {job.depositCollectedBy ? `(${job.depositCollectedBy})` : ''} | Due: ${balanceDue.toFixed(2)}
+                            Dep: ${(Number(job.depositPaid) || 0).toFixed(2)} {job.depositCollectedBy ? `(${job.depositCollectedBy})` : ''} | {balanceDue <= 0.01 ? '✓ Paid In Full' : `Due: $${balanceDue.toFixed(2)}`}
+                          </div>
+                        ) : (
+                          <div className={`text-[10px] font-bold ${balanceDue <= 0.01 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {balanceDue <= 0.01 ? '✓ Paid In Full' : `Due: $${balanceDue.toFixed(2)}`}
                           </div>
                         )}
                       </div>

@@ -104,27 +104,38 @@ export default function DashboardPage() {
     return currentWeekBookings.reduce((sum, job) => sum + (Number(job.totalAmount) || 0), 0);
   }, [currentWeekBookings]);
 
+  // Helper: Accurate Balance Due by cross-referencing Invoices
+  const getJobBalanceDue = (job: any, invoicesList: any[]) => {
+    if (job.status === 'cancelled') return 0;
+    const linkedInvoice = invoicesList.find(
+      (inv) => inv.jobId && (String(inv.jobId._id || inv.jobId) === String(job._id))
+    );
+    if (linkedInvoice) {
+      if (linkedInvoice.status === 'paid' || Number(linkedInvoice.balanceDue) <= 0.01) {
+        return 0;
+      }
+      return Number(linkedInvoice.balanceDue) || 0;
+    }
+    if (job.balanceDue !== undefined && job.balanceDue !== null) {
+      return Number(job.balanceDue) || 0;
+    }
+    return Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
+  };
+
   // 3. WAITING ON PAYMENT (UNPAID JOBS & INVOICES)
   const unpaidJobs = useMemo(() => {
     return jobs.filter((job) => {
       if (job.status === 'cancelled') return false;
-      const balance =
-        job.balanceDue !== undefined
-          ? Number(job.balanceDue)
-          : (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0);
+      const balance = getJobBalanceDue(job, invoices);
       return balance > 0.01;
     });
-  }, [jobs]);
+  }, [jobs, invoices]);
 
   const unpaidTotalAmount = useMemo(() => {
     return unpaidJobs.reduce((sum, job) => {
-      const balance =
-        job.balanceDue !== undefined
-          ? Number(job.balanceDue)
-          : (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0);
-      return sum + balance;
+      return sum + getJobBalanceDue(job, invoices);
     }, 0);
-  }, [unpaidJobs]);
+  }, [unpaidJobs, invoices]);
 
   // 4. TOTAL REVENUE COLLECTED
   const totalRevenue = useMemo(() => {
@@ -400,10 +411,7 @@ export default function DashboardPage() {
             {todayBookings.map((job) => {
               const isCompleted = job.status === 'completed';
               const isEnRoute = job.status === 'en_route';
-              const balanceDue =
-                job.balanceDue !== undefined
-                  ? Number(job.balanceDue)
-                  : Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
+              const balanceDue = getJobBalanceDue(job, invoices);
 
               return (
                 <div

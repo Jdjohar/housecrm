@@ -95,6 +95,17 @@ export async function PUT(
       if (body.completionNotes) {
         job.completionNotes = body.completionNotes;
       }
+
+      const recordPaymentNow = body.recordPaymentNow === true || body.collectPaymentNow === true;
+      const paymentNowAmount = Number(body.paymentAmount) || 0;
+      const totalAmount = Number(job.totalAmount) || Number(((Number(job.subtotal) || 0) + (Number(job.tax) || 0)).toFixed(2));
+      const depositAmt = Number(job.depositPaid) || 0;
+
+      if (recordPaymentNow && paymentNowAmount > 0) {
+        const totalPaid = depositAmt + paymentNowAmount;
+        job.balanceDue = Math.max(0, Number((totalAmount - totalPaid).toFixed(2)));
+      }
+
       await job.save();
 
       // Update customer last service date
@@ -124,7 +135,6 @@ export async function PUT(
         const tax = job.includeGst === false ? 0 : (Number(job.tax) || 0);
         const includeGst = job.includeGst !== false && tax > 0;
         const total = Number(job.totalAmount) || Number((subtotal + tax).toFixed(2));
-        const depositAmt = Number(job.depositPaid) || 0;
 
         let initialPayments: any[] = [];
         if (depositAmt > 0) {
@@ -138,10 +148,6 @@ export async function PUT(
             createdAt: new Date(),
           });
         }
-
-        // Check if payment was collected on the spot during completion
-        const recordPaymentNow = body.recordPaymentNow === true || body.collectPaymentNow === true;
-        const paymentNowAmount = Number(body.paymentAmount) || 0;
 
         if (recordPaymentNow && paymentNowAmount > 0) {
           initialPayments.push({
@@ -158,6 +164,9 @@ export async function PUT(
         const amountPaid = initialPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
         const balanceDue = Math.max(0, Number((total - amountPaid).toFixed(2)));
         const isFullyPaid = balanceDue <= 0.01 && total > 0;
+
+        job.balanceDue = balanceDue;
+        await job.save();
 
         let invStatus: 'sent' | 'draft' | 'partially_paid' | 'paid' | 'overdue' = 'sent';
         if (isFullyPaid) {
