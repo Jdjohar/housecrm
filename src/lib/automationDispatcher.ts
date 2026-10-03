@@ -9,6 +9,7 @@ export interface DispatchTriggerParams {
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
+  channel?: 'sms' | 'email' | 'both';
   referenceId?: string; // estimateId, jobId, invoiceId
   referenceNumber?: string; // e.g. "EST-1042", "JOB-803", "INV-209"
   serviceName?: string; // e.g. "Gutter Cleaning & House Wash"
@@ -18,7 +19,11 @@ export interface DispatchTriggerParams {
   amount?: number; // e.g. 349.00
   crewName?: string; // e.g. "Crew Alpha (Mike & Dave)"
   seasonName?: 'Spring' | 'Summer' | 'Fall' | 'Winter';
+  discountOffer?: string;
   customLink?: string;
+  customSubject?: string;
+  customEmailBody?: string;
+  customSmsText?: string;
 }
 
 export interface GeneratedMessage {
@@ -119,18 +124,25 @@ export function generateCommunicationContent(params: DispatchTriggerParams): Gen
     case 'seasonal_reminder':
       clientUrl = `${APP_URL}/portal/estimate/new?customer=${params.customerId || 'demo'}`;
       triggerTitle = `Seasonal Reminder (${params.seasonName || 'Spring'})`;
+      const offerLine = params.discountOffer ? `\nSpecial Offer: ${params.discountOffer}` : '';
       if (params.seasonName === 'Spring') {
-        smsText = `Hi ${firstName}, spring is here! Time to clear winter debris. Book your H&H Gutter Cleaning, House Wash & Driveway power washing before slots fill up: ${COMPANY_PHONE}`;
-        emailSubject = `🌸 Spring Exterior Care Checklist for Your Home - ${COMPANY_NAME}`;
-        emailBody = `Hi ${firstName},\n\nSpring has arrived, and it's the optimal time to protect your home exterior:\n• Gutter Cleaning (remove winter debris)\n• Siding & House Wash (eliminate mold & mildew)\n• Driveway & Patio Power Washing\n• Exterior Window Cleaning\n\nBook early to get priority scheduling. Call/text ${COMPANY_PHONE} or reply to this message.\n\n${COMPANY_NAME} (hnhpros.ca)`;
+        smsText = `Hi ${firstName}, spring is here! Time to clear winter debris. Book your H&H Gutter Cleaning, House Wash & Driveway power washing before slots fill up:${offerLine} (604) 555-0199`;
+        emailSubject = params.customSubject || `🌸 Spring Exterior Care Checklist for Your Home - ${COMPANY_NAME}`;
+        emailBody =
+          params.customEmailBody ||
+          `Hi ${firstName},\n\nSpring has arrived, and it's the optimal time to protect your home exterior:\n• Gutter Cleaning (remove winter debris)\n• Siding & House Wash (eliminate mold & mildew)\n• Driveway & Patio Power Washing\n• Exterior Window Cleaning${offerLine}\n\nBook early to get priority scheduling. Call/text ${COMPANY_PHONE} or reply to this message.\n\nBest regards,\n${COMPANY_NAME} (hnhpros.ca)`;
       } else if (params.seasonName === 'Fall') {
-        smsText = `Hi ${firstName}, fall leaves are falling! Protect your home with H&H Gutter Cleaning, Roof De-mossing & Moss Treatment: ${COMPANY_PHONE}`;
-        emailSubject = `🍂 Fall Home Prep: Gutter Cleaning & Roof Moss Treatment - ${COMPANY_NAME}`;
-        emailBody = `Hi ${firstName},\n\nHeavy rains are coming! Prevent roof leaks and water damage with our essential Fall package:\n• Full Gutter Cleaning & Downspout Flush\n• Roof Cleaning & Moss Treatment\n• Exterior Siding Wash\n\nReply to reserve your slot or call ${COMPANY_PHONE}.\n\n${COMPANY_NAME}`;
+        smsText = `Hi ${firstName}, fall leaves are falling! Protect your home with H&H Gutter Cleaning, Roof De-mossing & Moss Treatment:${offerLine} (604) 555-0199`;
+        emailSubject = params.customSubject || `🍂 Fall Home Prep: Gutter Cleaning & Roof Moss Treatment - ${COMPANY_NAME}`;
+        emailBody =
+          params.customEmailBody ||
+          `Hi ${firstName},\n\nHeavy rains are coming! Prevent roof leaks and water damage with our essential Fall package:\n• Full Gutter Cleaning & Downspout Flush\n• Roof Cleaning & Moss Treatment\n• Exterior Siding Wash${offerLine}\n\nReply to reserve your slot or call ${COMPANY_PHONE}.\n\nBest regards,\n${COMPANY_NAME}`;
       } else {
-        smsText = `Hi ${firstName}, get your outdoor spaces shining for summer! H&H Pressure washing, patio restoration & window care: ${COMPANY_PHONE}`;
-        emailSubject = `☀️ Summer Exterior Revival - ${COMPANY_NAME}`;
-        emailBody = `Hi ${firstName},\n\nEnjoy the sunshine with a sparkling clean patio, fence, and driveway!\n\nOur summer services:\n• High-pressure driveway cleaning\n• Deck & Fence washing\n• Exterior Window Glass sparkling wash\n\nCall/text ${COMPANY_PHONE} to book your service today.\n\n${COMPANY_NAME}`;
+        smsText = `Hi ${firstName}, get your outdoor spaces shining for summer! H&H Pressure washing, patio restoration & window care:${offerLine} (604) 555-0199`;
+        emailSubject = params.customSubject || `☀️ Summer Exterior Revival - ${COMPANY_NAME}`;
+        emailBody =
+          params.customEmailBody ||
+          `Hi ${firstName},\n\nEnjoy the sunshine with a sparkling clean patio, fence, and driveway!\n\nOur summer services:\n• High-pressure driveway cleaning\n• Deck & Fence washing\n• Exterior Window Glass sparkling wash${offerLine}\n\nCall/text ${COMPANY_PHONE} to book your service today.\n\nBest regards,\n${COMPANY_NAME}`;
       }
       break;
 
@@ -140,6 +152,11 @@ export function generateCommunicationContent(params: DispatchTriggerParams): Gen
       emailBody = `Hi ${firstName},\n\nMessage from ${COMPANY_NAME}.`;
       break;
   }
+
+  // Apply explicit overrides if provided
+  if (params.customSmsText) smsText = params.customSmsText;
+  if (params.customSubject) emailSubject = params.customSubject;
+  if (params.customEmailBody) emailBody = params.customEmailBody;
 
   return {
     trigger: params.trigger,
@@ -157,6 +174,7 @@ export async function dispatchAutomatedMessage(params: DispatchTriggerParams): P
   message: GeneratedMessage;
 }> {
   const content = generateCommunicationContent(params);
+  const targetChannel = params.channel || 'sms';
 
   try {
     await connectToDatabase();
@@ -165,16 +183,53 @@ export async function dispatchAutomatedMessage(params: DispatchTriggerParams): P
       ? new mongoose.Types.ObjectId(params.customerId)
       : new mongoose.Types.ObjectId();
 
+    // 1. If channel includes email and recipient email is present, send through SMTP service
+    if ((targetChannel === 'email' || targetChannel === 'both') && params.customerEmail) {
+      try {
+        const { sendEmail } = await import('./emailService');
+        const formattedHtml = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <h2 style="color: #0f172a; margin: 0; font-size: 20px; font-weight: 800;">${COMPANY_NAME}</h2>
+              <p style="color: #64748b; font-size: 12px; margin: 4px 0 0 0;">Property Maintenance & Cleaning Services</p>
+            </div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <div style="font-size: 14px; color: #334155; line-height: 1.6; white-space: pre-wrap;">${content.emailBody}</div>
+            </div>
+            ${
+              content.clientUrl
+                ? `<div style="text-align: center; margin: 24px 0;">
+                    <a href="${content.clientUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 10px; font-weight: 700; font-size: 13px; text-decoration: none; display: inline-block;">View in Client Portal</a>
+                  </div>`
+                : ''
+            }
+            <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; text-align: center; font-size: 11px; color: #94a3b8;">
+              ${COMPANY_NAME} • Surrey / Vancouver, BC • Phone: ${COMPANY_PHONE}
+            </div>
+          </div>
+        `;
+
+        await sendEmail({
+          to: params.customerEmail,
+          subject: content.emailSubject,
+          html: formattedHtml,
+          text: content.emailBody,
+        });
+      } catch (emailErr) {
+        console.error('Email transmission error:', emailErr);
+      }
+    }
+
     const newLog = await CommunicationLog.create({
       customerId: customerObjectId,
       customerName: params.customerName || 'Customer',
       recipientPhone: params.customerPhone || '604-555-0100',
       recipientEmail: params.customerEmail || 'customer@example.com',
-      channel: 'sms',
+      channel: targetChannel,
       triggerEvent: params.trigger,
       triggerTitle: content.triggerTitle,
       subject: content.emailSubject,
-      messageContent: content.smsText,
+      messageContent: targetChannel === 'email' ? content.emailBody : content.smsText,
       status: 'delivered',
       referenceId: params.referenceId,
       referenceType: params.referenceNumber ? params.referenceNumber.split('-')[0] : 'CRM',
@@ -182,6 +237,7 @@ export async function dispatchAutomatedMessage(params: DispatchTriggerParams): P
       metadata: {
         emailBody: content.emailBody,
         clientUrl: content.clientUrl,
+        channel: targetChannel,
         params,
       },
     });

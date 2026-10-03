@@ -18,6 +18,12 @@ import {
   Percent,
   ArrowRight,
   TrendingUp,
+  Mail,
+  Smartphone,
+  Layers,
+  Edit3,
+  Eye,
+  Check,
 } from 'lucide-react';
 
 interface Campaign {
@@ -42,7 +48,15 @@ export default function SeasonalRemindersPage() {
   const [counts, setCounts] = useState<any>({ Spring: 0, Summer: 0, Fall: 0, TotalOptIn: 0 });
   const [loading, setLoading] = useState(true);
   const [selectedSeason, setSelectedSeason] = useState<'Spring' | 'Summer' | 'Fall'>('Spring');
-  const [customDiscount, setCustomDiscount] = useState('10% Early Bird Special');
+  const [channel, setChannel] = useState<'both' | 'email' | 'sms'>('both');
+  const [customDiscount, setCustomDiscount] = useState('10% Early Bird Spring Special');
+  
+  // Custom message states
+  const [customSubject, setCustomSubject] = useState('');
+  const [customEmailBody, setCustomEmailBody] = useState('');
+  const [customSmsText, setCustomSmsText] = useState('');
+  const [activePreviewTab, setActivePreviewTab] = useState<'email' | 'sms'>('email');
+
   const [launching, setLaunching] = useState(false);
   const [launchResult, setLaunchResult] = useState<any>(null);
 
@@ -66,6 +80,38 @@ export default function SeasonalRemindersPage() {
     fetchSeasonal();
   }, []);
 
+  // Update default templates when season or discount changes
+  useEffect(() => {
+    if (selectedSeason === 'Spring') {
+      setCustomDiscount('10% Early Bird Spring Special');
+      setCustomSubject('🌸 Spring Exterior Care Checklist & Special Offer - H&H House Maintenance');
+      setCustomEmailBody(
+        `Hi {{First_Name}},\n\nSpring has arrived in BC, and it's the optimal time to protect your home from winter buildup:\n• Full Gutter Cleaning & Downspout Debris Removal\n• Vinyl Siding & Soft House Wash (eliminate mold/mildew)\n• Driveway & Concrete Surface Power Washing\n• Exterior Window Glass Cleaning\n\n🎁 Special Offer: 10% Early Bird Spring Special for returning customers!\n\nSlots fill rapidly as the weather warms up. Reply to this email or call (604) 555-0199 to claim your priority schedule.\n\nBest regards,\nThe H&H House Maintenance Team (hnhpros.ca)`
+      );
+      setCustomSmsText(
+        `Hi {{First_Name}}, spring is here! Time to clear winter debris. Book your H&H Gutter Cleaning, House Wash & Driveway power washing before slots fill up. Special: 10% Early Bird Discount! Call (604) 555-0199`
+      );
+    } else if (selectedSeason === 'Summer') {
+      setCustomDiscount('Free Walkway Scrub with BBQ Patio Wash');
+      setCustomSubject('☀️ Summer Exterior Revival & Pressure Washing - H&H House Maintenance');
+      setCustomEmailBody(
+        `Hi {{First_Name}},\n\nGet your outdoor spaces shining and ready for summer living!\n• High-Pressure Patio & Driveway Cleaning\n• Deck & Wooden Fence Wash & Restoration\n• Sparkling Exterior Window Cleaning\n\n🎁 Seasonal Incentive: Free Walkway Scrub with BBQ Patio Wash!\n\nCall/text (604) 555-0199 or reply directly to book your preferred summer date.\n\nBest regards,\nH&H House Maintenance Team`
+      );
+      setCustomSmsText(
+        `Hi {{First_Name}}, get your patio & outdoor spaces shining for summer! H&H Pressure washing, fence & deck restoration. Special: Free Walkway Scrub! Call (604) 555-0199`
+      );
+    } else if (selectedSeason === 'Fall') {
+      setCustomDiscount('15% Off Roof De-Mossing with Gutter Package');
+      setCustomSubject('🍂 Essential Fall Home Defense: Gutter & Roof Moss Treatment - H&H House Maintenance');
+      setCustomEmailBody(
+        `Hi {{First_Name}},\n\nHeavy BC rains and fall leaves are on the way. Prevent costly roof leaks and overflow damage:\n• Thorough Gutter Cleaning & Downspout Water Flow Test\n• Roof De-Mossing & Zinc/Eco Anti-Fungal Treatment\n• Exterior Siding Wash\n\n🎁 Fall Special: 15% Off Roof De-Mossing with Gutter Package!\n\nProtect your home before the storm season. Reply or call (604) 555-0199 to lock in your date.\n\nBest regards,\nH&H House Maintenance (hnhpros.ca)`
+      );
+      setCustomSmsText(
+        `Hi {{First_Name}}, fall leaves are falling! Protect your roof with H&H Gutter Cleaning & Roof Moss Treatment. Special: 15% Off Roof De-Mossing! Call (604) 555-0199`
+      );
+    }
+  }, [selectedSeason]);
+
   const currentCampaign = campaigns.find((c) => c.season === selectedSeason);
 
   const handleLaunchCampaign = async () => {
@@ -77,7 +123,11 @@ export default function SeasonalRemindersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           season: selectedSeason,
+          channel: channel,
           discountOffer: customDiscount,
+          customSubject,
+          customEmailBody,
+          customSmsText,
         }),
       });
       const data = await res.json();
@@ -104,26 +154,26 @@ export default function SeasonalRemindersPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
       {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white p-6 rounded-3xl shadow-xl border border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-xl border border-slate-800">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-400/20 text-teal-300 text-xs font-bold border border-teal-400/30">
             <Sparkles className="w-3.5 h-3.5 text-teal-300" />
-            Predictive Maintenance Engine
+            Predictive Re-Engagement Engine
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Automatic Seasonal Reminders
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+            Seasonal Reminders & Marketing Blasts
           </h1>
-          <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-            Re-engage previous H&H House Maintenance customers at the exact optimal time for their home exterior services (Spring house washes, Summer pressure washing, Fall gutter & moss clearing).
+          <p className="text-slate-300 text-xs md:text-sm max-w-2xl leading-relaxed">
+            Dispatch customized seasonal offers via <strong className="text-teal-300">Email</strong>, <strong className="text-teal-300">SMS</strong>, or <strong className="text-teal-300">Both</strong> to past clients for Spring house washing, Summer pressure washing, and Fall gutter/moss clearing.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="bg-slate-800/80 px-4 py-2 rounded-2xl border border-slate-700 text-center">
-            <div className="text-[11px] text-slate-400 uppercase font-semibold">Total Repeat Pool</div>
-            <div className="text-xl font-black text-white">{counts.TotalOptIn || 5} Customers</div>
+          <div className="bg-slate-800/80 px-5 py-3 rounded-2xl border border-slate-700 text-center shadow-lg">
+            <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Total Repeat Pool</div>
+            <div className="text-2xl font-black text-white">{counts.TotalOptIn || 5} Customers</div>
           </div>
         </div>
       </div>
@@ -133,10 +183,7 @@ export default function SeasonalRemindersPage() {
         {/* SPRING */}
         <button
           type="button"
-          onClick={() => {
-            setSelectedSeason('Spring');
-            setCustomDiscount('10% Early Bird Spring Special');
-          }}
+          onClick={() => setSelectedSeason('Spring')}
           className={`p-6 rounded-3xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
             selectedSeason === 'Spring'
               ? 'bg-gradient-to-br from-emerald-50 via-white to-emerald-50/30 border-emerald-500 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/20'
@@ -160,7 +207,6 @@ export default function SeasonalRemindersPage() {
               </p>
             </div>
 
-            {/* Checklist */}
             <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs text-slate-700">
               <div className="font-bold text-[11px] uppercase tracking-wider text-emerald-700">
                 Included Services:
@@ -183,10 +229,7 @@ export default function SeasonalRemindersPage() {
         {/* SUMMER */}
         <button
           type="button"
-          onClick={() => {
-            setSelectedSeason('Summer');
-            setCustomDiscount('Complimentary Walkway Scrub with Patio Wash');
-          }}
+          onClick={() => setSelectedSeason('Summer')}
           className={`p-6 rounded-3xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
             selectedSeason === 'Summer'
               ? 'bg-gradient-to-br from-amber-50 via-white to-amber-50/30 border-amber-500 shadow-lg shadow-amber-500/10 ring-2 ring-amber-500/20'
@@ -210,7 +253,6 @@ export default function SeasonalRemindersPage() {
               </p>
             </div>
 
-            {/* Checklist */}
             <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs text-slate-700">
               <div className="font-bold text-[11px] uppercase tracking-wider text-amber-700">
                 Included Services:
@@ -233,10 +275,7 @@ export default function SeasonalRemindersPage() {
         {/* FALL */}
         <button
           type="button"
-          onClick={() => {
-            setSelectedSeason('Fall');
-            setCustomDiscount('15% Off Roof De-Mossing with Gutter Clean');
-          }}
+          onClick={() => setSelectedSeason('Fall')}
           className={`p-6 rounded-3xl border text-left transition-all relative overflow-hidden flex flex-col justify-between ${
             selectedSeason === 'Fall'
               ? 'bg-gradient-to-br from-orange-50 via-white to-orange-50/30 border-orange-500 shadow-lg shadow-orange-500/10 ring-2 ring-orange-500/20'
@@ -260,7 +299,6 @@ export default function SeasonalRemindersPage() {
               </p>
             </div>
 
-            {/* Checklist */}
             <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs text-slate-700">
               <div className="font-bold text-[11px] uppercase tracking-wider text-orange-700">
                 Included Services:
@@ -283,17 +321,18 @@ export default function SeasonalRemindersPage() {
 
       {/* Selected Season Campaign Launchpad */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs space-y-6">
+        {/* Header & Launch Button */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
               {getSeasonIcon(selectedSeason)}
-              <span>Configuring {selectedSeason} Reminder Blast</span>
+              <span>Configuring {selectedSeason} Campaign Blast</span>
             </div>
             <h2 className="text-xl font-black text-slate-900 mt-1">
               {currentCampaign?.title || `${selectedSeason} Maintenance Blast`}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              {currentCampaign?.description}
+              {currentCampaign?.description || 'Send targeted seasonal reminders directly to client phones and inboxes.'}
             </p>
           </div>
 
@@ -305,7 +344,7 @@ export default function SeasonalRemindersPage() {
             >
               {launching ? (
                 <>
-                  <Clock className="w-4 h-4 animate-spin" /> Dispatching Reminders...
+                  <Clock className="w-4 h-4 animate-spin" /> Dispatching Messages...
                 </>
               ) : (
                 <>
@@ -321,7 +360,7 @@ export default function SeasonalRemindersPage() {
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm flex items-center justify-between animate-in fade-in">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              <span>{launchResult.message}</span>
+              <span className="font-semibold">{launchResult.message}</span>
             </div>
             <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
               {launchResult.totalDispatched} Delivered
@@ -329,66 +368,237 @@ export default function SeasonalRemindersPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Custom Offer & Settings */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Percent className="w-4 h-4 text-blue-600" />
-              Campaign Offer & Incentive
+        {/* Delivery Channel Selector */}
+        <div className="space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+          <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+            1. Select Delivery Channel (ਕਿਸ ਮਾਧਿਅਮ ਰਾਹੀਂ ਭੇਜਣਾ ਹੈ)
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Both (SMS + Email) */}
+            <button
+              type="button"
+              onClick={() => setChannel('both')}
+              className={`p-3.5 rounded-xl border text-left transition flex items-center gap-3 ${
+                channel === 'both'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              <div className={`p-2 rounded-lg ${channel === 'both' ? 'bg-white/20' : 'bg-blue-50 text-blue-600'}`}>
+                <Layers className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold">SMS + Email (Both)</div>
+                <div className={`text-[10px] ${channel === 'both' ? 'text-blue-100' : 'text-slate-400'}`}>
+                  Highest conversion & reach
+                </div>
+              </div>
+            </button>
+
+            {/* Email Only */}
+            <button
+              type="button"
+              onClick={() => {
+                setChannel('email');
+                setActivePreviewTab('email');
+              }}
+              className={`p-3.5 rounded-xl border text-left transition flex items-center gap-3 ${
+                channel === 'email'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              <div className={`p-2 rounded-lg ${channel === 'email' ? 'bg-white/20' : 'bg-indigo-50 text-indigo-600'}`}>
+                <Mail className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold">Email Blast Only</div>
+                <div className={`text-[10px] ${channel === 'email' ? 'text-blue-100' : 'text-slate-400'}`}>
+                  Via SMTP Mail Server
+                </div>
+              </div>
+            </button>
+
+            {/* SMS Only */}
+            <button
+              type="button"
+              onClick={() => {
+                setChannel('sms');
+                setActivePreviewTab('sms');
+              }}
+              className={`p-3.5 rounded-xl border text-left transition flex items-center gap-3 ${
+                channel === 'sms'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              <div className={`p-2 rounded-lg ${channel === 'sms' ? 'bg-white/20' : 'bg-emerald-50 text-emerald-600'}`}>
+                <Smartphone className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold">SMS Text Only</div>
+                <div className={`text-[10px] ${channel === 'sms' ? 'text-blue-100' : 'text-slate-400'}`}>
+                  Direct to customer phone
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Campaign Configuration & Preview Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* LEFT: Custom Offer & Message Editor (6 cols) */}
+          <div className="lg:col-span-6 space-y-4">
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              <Edit3 className="w-4 h-4 text-blue-600" />
+              2. Customize Offer & Message Copy
             </h3>
 
+            {/* Offer Input */}
             <div>
               <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                Special Seasonal Discount Headline
+                Special Seasonal Discount / Incentive Headline
               </label>
               <input
                 type="text"
                 value={customDiscount}
                 onChange={(e) => setCustomDiscount(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                placeholder="e.g. 10% Early Bird Special"
+                className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               />
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <div className="text-xs font-bold text-slate-700">Target Customer Criteria:</div>
-              <ul className="text-xs text-slate-600 space-y-1 list-disc list-inside">
-                <li>Previous customers with completed service &gt;4 months ago</li>
-                <li>Homes tagged for {selectedSeason} services (Gutter, Roof, Power Wash)</li>
-                <li>Customers with SMS notifications enabled</li>
-              </ul>
-            </div>
+            {/* Email Subject (if email or both is enabled) */}
+            {(channel === 'email' || channel === 'both') && (
+              <div>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                  Email Subject Line
+                </label>
+                <input
+                  type="text"
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                />
+              </div>
+            )}
+
+            {/* Email Body Editor */}
+            {(channel === 'email' || channel === 'both') && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-600">Email Message Body</label>
+                  <span className="text-[10px] text-slate-400">Supports &#123;&#123;First_Name&#125;&#125;</span>
+                </div>
+                <textarea
+                  rows={6}
+                  value={customEmailBody}
+                  onChange={(e) => setCustomEmailBody(e.target.value)}
+                  className="w-full p-3 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-normal leading-relaxed"
+                />
+              </div>
+            )}
+
+            {/* SMS Copy Editor */}
+            {(channel === 'sms' || channel === 'both') && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-600">SMS Text Message</label>
+                  <span className="text-[10px] text-slate-400">{customSmsText.length} characters</span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={customSmsText}
+                  onChange={(e) => setCustomSmsText(e.target.value)}
+                  className="w-full p-3 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 font-normal leading-relaxed"
+                />
+              </div>
+            )}
           </div>
 
-          {/* SMS & Email Copy Preview */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Send className="w-4 h-4 text-blue-600" />
-              Personalized Customer SMS Template
-            </h3>
+          {/* RIGHT: Live Customer Preview (6 cols) */}
+          <div className="lg:col-span-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <Eye className="w-4 h-4 text-blue-600" />
+                3. Live Customer Preview
+              </h3>
 
-            <div className="p-4 bg-slate-900 text-white rounded-2xl text-xs space-y-2 leading-relaxed font-sans shadow-inner">
-              <div className="text-[11px] text-slate-400 border-b border-slate-800 pb-1.5 flex justify-between">
-                <span>H&H House Maintenance Auto-SMS</span>
-                <span>{selectedSeason} Blast</span>
+              {/* Toggle preview mode */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setActivePreviewTab('email')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                    activePreviewTab === 'email'
+                      ? 'bg-white text-blue-600 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  <Mail className="w-3.5 h-3.5" /> Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePreviewTab('sms')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                    activePreviewTab === 'sms'
+                      ? 'bg-white text-blue-600 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" /> SMS
+                </button>
               </div>
-              <p className="pt-1 text-slate-200">
-                {selectedSeason === 'Spring' && (
-                  <>
-                    Hi <span className="text-amber-300 font-bold">&#123;&#123;First_Name&#125;&#125;</span>, spring is here! Time to clear winter debris. Book your H&H Gutter Cleaning, House Wash & Driveway power washing before slots fill up: (604) 555-0199
-                  </>
-                )}
-                {selectedSeason === 'Summer' && (
-                  <>
-                    Hi <span className="text-amber-300 font-bold">&#123;&#123;First_Name&#125;&#125;</span>, get your patio & outdoor spaces shining for summer! H&H Pressure washing, fence & deck restoration: (604) 555-0199
-                  </>
-                )}
-                {selectedSeason === 'Fall' && (
-                  <>
-                    Hi <span className="text-amber-300 font-bold">&#123;&#123;First_Name&#125;&#125;</span>, fall leaves are falling! Protect your home with H&H Gutter Cleaning, Roof De-mossing & Moss Treatment: (604) 555-0199
-                  </>
-                )}
-              </p>
             </div>
+
+            {/* Email Preview */}
+            {activePreviewTab === 'email' ? (
+              <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
+                <div className="p-3 bg-slate-100 border-b border-slate-200 text-xs space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-500 text-[11px] w-12">From:</span>
+                    <span className="text-slate-800 font-medium">H&H House Maintenance &lt;info@hnhpros.ca&gt;</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-500 text-[11px] w-12">Subject:</span>
+                    <span className="text-slate-900 font-bold">{customSubject}</span>
+                  </div>
+                </div>
+
+                <div className="p-5 space-y-4">
+                  <div className="text-center pb-3 border-b border-slate-100">
+                    <div className="font-black text-slate-900 text-sm">H&H House Maintenance Ltd.</div>
+                    <div className="text-[10px] text-slate-400">Surrey / Vancouver, BC • (604) 555-0199</div>
+                  </div>
+
+                  <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-sans">
+                    {customEmailBody.replace('{{First_Name}}', 'John')}
+                  </div>
+
+                  <div className="pt-2 text-center">
+                    <span className="inline-block bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-xl">
+                      Book Online / Call Now: (604) 555-0199
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* SMS Preview */
+              <div className="p-5 bg-slate-900 text-white rounded-2xl text-xs space-y-3 leading-relaxed font-sans shadow-lg">
+                <div className="text-[11px] text-slate-400 border-b border-slate-800 pb-2 flex justify-between items-center">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <Smartphone className="w-3.5 h-3.5 text-blue-400" /> H&H SMS Dispatch
+                  </span>
+                  <span className="bg-slate-800 px-2 py-0.5 rounded text-[10px]">{selectedSeason} Blast</span>
+                </div>
+                <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/60 text-slate-100">
+                  {customSmsText.replace('{{First_Name}}', 'John')}
+                </div>
+                <div className="text-[10px] text-slate-500 text-right">
+                  Standard carrier rates apply • Reply STOP to unsubscribe
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

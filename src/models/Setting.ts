@@ -48,6 +48,16 @@ export interface ISetting extends Document {
   autoPaymentReceivedSms: boolean;
   autoReviewRequestSms: boolean;
   autoSeasonalReminderSms: boolean;
+  autoSeasonalReminderEmail?: boolean;
+  // SMTP Email Settings
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpSecure?: boolean;
+  smtpFromName?: string;
+  smtpFromEmail?: string;
+  smtpEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -136,6 +146,16 @@ const SettingSchema = new Schema<ISetting>(
     autoPaymentReceivedSms: { type: Boolean, default: true },
     autoReviewRequestSms: { type: Boolean, default: true },
     autoSeasonalReminderSms: { type: Boolean, default: true },
+    autoSeasonalReminderEmail: { type: Boolean, default: true },
+    // SMTP Configuration
+    smtpHost: { type: String, default: '' },
+    smtpPort: { type: Number, default: 587 },
+    smtpUser: { type: String, default: '' },
+    smtpPass: { type: String, default: '' },
+    smtpSecure: { type: Boolean, default: false },
+    smtpFromName: { type: String, default: 'H&H House Maintenance' },
+    smtpFromEmail: { type: String, default: 'info@hnhpros.ca' },
+    smtpEnabled: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   try {
     await connectToDatabase();
     const body = await req.json();
-    const { season, customMessage, discountOffer } = body;
+    const { season, channel = 'both', discountOffer, customSubject, customEmailBody, customSmsText } = body;
 
     const campaign = await SeasonalCampaign.findOne({ season });
     const customers = await Customer.find({ seasonalOptIn: true });
@@ -59,7 +59,12 @@ export async function POST(req: NextRequest) {
         customerName: customer.name,
         customerPhone: customer.phone,
         customerEmail: customer.email,
+        channel: channel,
         seasonName: season,
+        discountOffer,
+        customSubject,
+        customEmailBody,
+        customSmsText,
       });
 
       if (dispatchRes.success) {
@@ -67,6 +72,8 @@ export async function POST(req: NextRequest) {
         dispatchedLogs.push({
           customer: customer.name,
           phone: customer.phone,
+          email: customer.email,
+          channel,
         });
       }
     }
@@ -78,11 +85,12 @@ export async function POST(req: NextRequest) {
       await campaign.save();
     }
 
+    const channelLabel = channel === 'both' ? 'SMS & Email' : channel.toUpperCase();
     return NextResponse.json({
       success: true,
       season,
       totalDispatched: sentCount,
-      message: `Successfully launched ${season} Seasonal Reminder to ${sentCount} previous customers!`,
+      message: `Successfully launched ${season} Seasonal Reminder via ${channelLabel} to ${sentCount} previous customers!`,
       details: dispatchedLogs,
     });
   } catch (error: any) {

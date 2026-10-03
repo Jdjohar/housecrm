@@ -10,6 +10,7 @@ import {
   MapPin,
   ShieldCheck,
   CheckCircle2,
+  AlertCircle,
   Save,
   Sparkles,
   Users,
@@ -23,6 +24,11 @@ import {
   Layers,
   Wrench,
   ExternalLink,
+  Server,
+  Lock,
+  Send,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -36,6 +42,15 @@ export default function SettingsPage() {
     defaultJobLengthHours: 3,
     defaultStartTime: '09:00 AM',
     googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4',
+    // SMTP Email Settings
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPass: '',
+    smtpSecure: false,
+    smtpFromName: 'H&H House Maintenance',
+    smtpFromEmail: 'info@hnhpros.ca',
+    smtpEnabled: true,
     crewMembers: [
       { name: 'Mike Johnson', phone: '(604) 555-1201', hourlyRate: 32, role: 'Lead Tech' },
       { name: 'Dave Miller', phone: '(604) 555-1202', hourlyRate: 28, role: 'Technician' },
@@ -76,6 +91,12 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
+  // SMTP Testing states
+  const [showPassword, setShowPassword] = useState(false);
+  const [testingSmtp, setTestingSmtp] = useState(false);
+  const [testEmailRecipient, setTestEmailRecipient] = useState('');
+  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
   // Password fields
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -93,6 +114,9 @@ export default function SettingsPage() {
             customServices: data.data.customServices?.length ? data.data.customServices : prev.customServices,
             crewMembers: data.data.crewMembers?.length ? data.data.crewMembers : prev.crewMembers,
           }));
+          if (data.data.email) {
+            setTestEmailRecipient(data.data.email);
+          }
         }
       })
       .catch((e) => console.error(e));
@@ -109,13 +133,63 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setNotice('All settings & pricing matrix saved successfully!');
+        setNotice('All business settings, SMTP configuration & pricing matrix saved successfully!');
         setTimeout(() => setNotice(null), 3500);
       }
     } catch (err) {
       console.error(err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Test SMTP connection & optional test email dispatch
+  const handleTestSmtp = async () => {
+    if (!settings.smtpHost || !settings.smtpUser) {
+      setSmtpTestResult({
+        success: false,
+        message: 'Please enter SMTP Host and Username/Email before testing.',
+      });
+      return;
+    }
+
+    setTestingSmtp(true);
+    setSmtpTestResult(null);
+
+    try {
+      const res = await fetch('/api/settings/test-smtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          host: settings.smtpHost,
+          port: settings.smtpPort,
+          user: settings.smtpUser,
+          pass: settings.smtpPass,
+          secure: settings.smtpSecure,
+          fromName: settings.smtpFromName,
+          fromEmail: settings.smtpFromEmail,
+          testRecipient: testEmailRecipient || settings.email,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSmtpTestResult({
+          success: true,
+          message: data.message || 'SMTP Connection & credentials verified successfully!',
+        });
+      } else {
+        setSmtpTestResult({
+          success: false,
+          message: data.error || 'SMTP Connection failed. Please check host, port, or password.',
+        });
+      }
+    } catch (err: any) {
+      setSmtpTestResult({
+        success: false,
+        message: err.message || 'Network error while testing SMTP connection.',
+      });
+    } finally {
+      setTestingSmtp(false);
     }
   };
 
@@ -178,7 +252,7 @@ export default function SettingsPage() {
   const handleCrewChange = (index: number, field: string, val: any) => {
     const updated = [...settings.crewMembers];
     updated[index] = { ...updated[index], [field]: val };
-    setSettings((prev: any) => ({ ...prev, crewMembers: updated }));
+    setSettings((prev: any) => ({ ...prev, customServices: updated }));
   };
 
   const handleChangePassword = (e: React.FormEvent) => {
@@ -194,16 +268,16 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
             <Settings className="w-6 h-6 text-blue-600" />
-            Business Settings, Pricing & Services
+            Business Settings, SMTP Email & Pricing
           </h1>
           <p className="text-xs text-slate-500">
-            Configure company parameters, crew rates, tiered roof matrix pricing, and flat-rate services catalog
+            Configure business information, outgoing SMTP mail server, crew rates, roof matrix pricing, and services
           </p>
         </div>
 
@@ -219,21 +293,211 @@ export default function SettingsPage() {
 
       {notice && (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{notice}</span>
         </div>
       )}
 
-      {/* Two-Column Grid: Left (Business, Crew, Account) vs Right (Services & Roof Pricing Matrix) */}
+      {/* Two-Column Grid: Left (Business, SMTP, Crew, Account) vs Right (Roof Matrix & Services) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* ================= LEFT COLUMN (5 cols) ================= */}
         <div className="lg:col-span-5 space-y-6">
-          {/* 1. Business Card */}
+          {/* 1. SMTP EMAIL SERVER CONFIGURATION CARD */}
+          <div className="bg-white rounded-3xl border-2 border-blue-100 p-6 shadow-xs space-y-4 relative overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                  <Server className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">SMTP Email Server</h2>
+                  <p className="text-[11px] text-slate-400">Outgoing email dispatch settings</p>
+                </div>
+              </div>
+              <span className="text-[10px] uppercase font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                Email Dispatch
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Emails for invoices, estimates, and seasonal reminders will be delivered directly from your company address via this SMTP server.
+            </p>
+
+            <div className="space-y-3">
+              {/* Host & Port */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2">
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    SMTP Host / Server
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.smtpHost || ''}
+                    onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+                    placeholder="e.g. smtp.gmail.com"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-medium font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    Port
+                  </label>
+                  <input
+                    type="number"
+                    value={settings.smtpPort || 587}
+                    onChange={(e) => setSettings({ ...settings, smtpPort: Number(e.target.value) })}
+                    placeholder="587"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* Username & Password */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  SMTP Username / Email
+                </label>
+                <input
+                  type="text"
+                  value={settings.smtpUser || ''}
+                  onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+                  placeholder="e.g. info@hnhpros.ca"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  SMTP Password / App Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={settings.smtpPass || ''}
+                    onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value })}
+                    placeholder="••••••••••••••••"
+                    className="w-full pl-3 pr-9 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* From Name & From Email */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    From Sender Name
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.smtpFromName || ''}
+                    onChange={(e) => setSettings({ ...settings, smtpFromName: e.target.value })}
+                    placeholder="H&H House Maintenance"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    From Sender Email
+                  </label>
+                  <input
+                    type="email"
+                    value={settings.smtpFromEmail || ''}
+                    onChange={(e) => setSettings({ ...settings, smtpFromEmail: e.target.value })}
+                    placeholder="info@hnhpros.ca"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* SSL/TLS Toggle */}
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                <div>
+                  <div className="text-xs font-semibold text-slate-700">SSL / TLS Encryption</div>
+                  <div className="text-[10px] text-slate-400">Turn on for Port 465 (SSL) or off for Port 587 (TLS/STARTTLS)</div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(settings.smtpSecure)}
+                    onChange={(e) => setSettings({ ...settings, smtpSecure: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Test Email Section */}
+              <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 space-y-2">
+                <label className="text-[11px] font-bold text-blue-900 block">
+                  Test SMTP Connection & Send Verification Email
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    placeholder="Recipient email (e.g. your@gmail.com)"
+                    value={testEmailRecipient}
+                    onChange={(e) => setTestEmailRecipient(e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-blue-200 bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleTestSmtp}
+                    disabled={testingSmtp}
+                    className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+                  >
+                    {testingSmtp ? (
+                      <>
+                        <Clock className="w-3.5 h-3.5 animate-spin" /> Testing...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" /> Test Connection
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {smtpTestResult && (
+                  <div
+                    className={`p-2.5 rounded-lg text-xs flex items-start gap-1.5 font-medium ${
+                      smtpTestResult.success
+                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        : 'bg-rose-100 text-rose-900 border border-rose-300'
+                    }`}
+                  >
+                    {smtpTestResult.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    )}
+                    <span>{smtpTestResult.message}</span>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleSaveAll()}
+                className="w-full py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
+              >
+                Save SMTP Settings
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Business Card */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
             <div>
-              <h2 className="text-sm font-bold text-slate-900">Business</h2>
+              <h2 className="text-sm font-bold text-slate-900">Business Profile</h2>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Shows on estimates, invoices, and in SMS dispatches sent to customer phones.
+                Shows on estimates, invoices, and communication dispatches.
               </p>
             </div>
 
@@ -309,18 +573,18 @@ export default function SettingsPage() {
                   onClick={() => handleSaveAll()}
                   className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
                 >
-                  Save
+                  Save Business Info
                 </button>
               </div>
             </div>
           </div>
 
-          {/* 2. Crew Card */}
+          {/* 3. Crew Card */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
             <div>
-              <h2 className="text-sm font-bold text-slate-900">Crew</h2>
+              <h2 className="text-sm font-bold text-slate-900">Crew Members</h2>
               <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-                Hourly rate is what you pay them. A job keeps the rate it was booked at, so a raise never rewrites old jobs.
+                Hourly rate is what you pay them. A job keeps the rate it was booked at.
               </p>
             </div>
 
@@ -391,7 +655,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* 3. Account Card */}
+          {/* 4. Account Card */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Account</h2>
