@@ -29,6 +29,8 @@ import {
   Send,
   Eye,
   EyeOff,
+  Smartphone,
+  Radio,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -51,6 +53,12 @@ export default function SettingsPage() {
     smtpFromName: 'H&H House Maintenance',
     smtpFromEmail: 'info@hnhpros.ca',
     smtpEnabled: true,
+    // Twilio SMS Settings
+    twilioAccountSid: '',
+    twilioAuthToken: '',
+    twilioPhoneNumber: '',
+    twilioMessagingServiceSid: '',
+    twilioEnabled: true,
     crewMembers: [
       { name: 'Mike Johnson', phone: '(604) 555-1201', hourlyRate: 32, role: 'Lead Tech' },
       { name: 'Dave Miller', phone: '(604) 555-1202', hourlyRate: 28, role: 'Technician' },
@@ -92,10 +100,16 @@ export default function SettingsPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   // SMTP Testing states
-  const [showPassword, setShowPassword] = useState(false);
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
   const [testingSmtp, setTestingSmtp] = useState(false);
   const [testEmailRecipient, setTestEmailRecipient] = useState('');
   const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Twilio Testing states
+  const [showTwilioToken, setShowTwilioToken] = useState(false);
+  const [testingTwilio, setTestingTwilio] = useState(false);
+  const [testPhoneRecipient, setTestPhoneRecipient] = useState('');
+  const [twilioTestResult, setTwilioTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Password fields
   const [newPassword, setNewPassword] = useState('');
@@ -117,6 +131,9 @@ export default function SettingsPage() {
           if (data.data.email) {
             setTestEmailRecipient(data.data.email);
           }
+          if (data.data.phone) {
+            setTestPhoneRecipient(data.data.phone);
+          }
         }
       })
       .catch((e) => console.error(e));
@@ -133,7 +150,7 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setNotice('All business settings, SMTP configuration & pricing matrix saved successfully!');
+        setNotice('All settings, Twilio API, SMTP configuration & pricing matrix saved successfully!');
         setTimeout(() => setNotice(null), 3500);
       }
     } catch (err) {
@@ -143,7 +160,7 @@ export default function SettingsPage() {
     }
   };
 
-  // Test SMTP connection & optional test email dispatch
+  // Test SMTP connection & test email
   const handleTestSmtp = async () => {
     if (!settings.smtpHost || !settings.smtpUser) {
       setSmtpTestResult({
@@ -190,6 +207,53 @@ export default function SettingsPage() {
       });
     } finally {
       setTestingSmtp(false);
+    }
+  };
+
+  // Test Twilio connection & test SMS
+  const handleTestTwilio = async () => {
+    if (!settings.twilioAccountSid || !settings.twilioAuthToken) {
+      setTwilioTestResult({
+        success: false,
+        message: 'Please enter Twilio Account SID and Auth Token before testing.',
+      });
+      return;
+    }
+
+    setTestingTwilio(true);
+    setTwilioTestResult(null);
+
+    try {
+      const res = await fetch('/api/settings/test-twilio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountSid: settings.twilioAccountSid,
+          authToken: settings.twilioAuthToken,
+          phoneNumber: settings.twilioPhoneNumber,
+          messagingServiceSid: settings.twilioMessagingServiceSid,
+          testRecipientPhone: testPhoneRecipient || settings.phone,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTwilioTestResult({
+          success: true,
+          message: data.message || 'Twilio connection & API credentials verified successfully!',
+        });
+      } else {
+        setTwilioTestResult({
+          success: false,
+          message: data.error || 'Twilio API verification failed. Please check Account SID & Auth Token.',
+        });
+      }
+    } catch (err: any) {
+      setTwilioTestResult({
+        success: false,
+        message: err.message || 'Network error while validating Twilio API.',
+      });
+    } finally {
+      setTestingTwilio(false);
     }
   };
 
@@ -252,7 +316,7 @@ export default function SettingsPage() {
   const handleCrewChange = (index: number, field: string, val: any) => {
     const updated = [...settings.crewMembers];
     updated[index] = { ...updated[index], [field]: val };
-    setSettings((prev: any) => ({ ...prev, customServices: updated }));
+    setSettings((prev: any) => ({ ...prev, crewMembers: updated }));
   };
 
   const handleChangePassword = (e: React.FormEvent) => {
@@ -274,10 +338,10 @@ export default function SettingsPage() {
         <div>
           <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
             <Settings className="w-6 h-6 text-blue-600" />
-            Business Settings, SMTP Email & Pricing
+            Business Settings, Twilio SMS & SMTP
           </h1>
           <p className="text-xs text-slate-500">
-            Configure business information, outgoing SMTP mail server, crew rates, roof matrix pricing, and services
+            Configure Twilio SMS Gateway, Outgoing SMTP Mail Server, Pricing Matrix, and Company Profile
           </p>
         </div>
 
@@ -298,16 +362,162 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Two-Column Grid: Left (Business, SMTP, Crew, Account) vs Right (Roof Matrix & Services) */}
+      {/* Two-Column Grid: Left (Twilio, SMTP, Business, Crew, Account) vs Right (Roof Matrix & Services) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* ================= LEFT COLUMN (5 cols) ================= */}
-        <div className="lg:col-span-5 space-y-6">
-          {/* 1. SMTP EMAIL SERVER CONFIGURATION CARD */}
-          <div className="bg-white rounded-3xl border-2 border-blue-100 p-6 shadow-xs space-y-4 relative overflow-hidden">
+        {/* ================= LEFT COLUMN (6 cols) ================= */}
+        <div className="lg:col-span-6 space-y-6">
+          {/* 1. TWILIO SMS GATEWAY CONFIGURATION CARD */}
+          <div className="bg-white rounded-3xl border-2 border-emerald-200 p-6 shadow-xs space-y-4 relative overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
-                  <Server className="w-4 h-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-xs">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Twilio SMS Gateway API</h2>
+                  <p className="text-[11px] text-slate-400">Canadian & US text messaging service</p>
+                </div>
+              </div>
+              <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                Live SMS Engine
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Customer notifications (Estimate alerts, Crew en-route, Invoices, Review links, Seasonal Reminders) will be sent via this Twilio account.
+            </p>
+
+            <div className="space-y-3">
+              {/* Account SID */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  Twilio Account SID
+                </label>
+                <input
+                  type="text"
+                  value={settings.twilioAccountSid || ''}
+                  onChange={(e) => setSettings({ ...settings, twilioAccountSid: e.target.value })}
+                  placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-medium"
+                />
+              </div>
+
+              {/* Auth Token */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  Twilio Auth Token
+                </label>
+                <div className="relative">
+                  <input
+                    type={showTwilioToken ? 'text' : 'password'}
+                    value={settings.twilioAuthToken || ''}
+                    onChange={(e) => setSettings({ ...settings, twilioAuthToken: e.target.value })}
+                    placeholder="••••••••••••••••••••••••••••••••"
+                    className="w-full pl-3 pr-9 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowTwilioToken(!showTwilioToken)}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showTwilioToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Phone Number & Messaging Service SID */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    Twilio Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.twilioPhoneNumber || ''}
+                    onChange={(e) => setSettings({ ...settings, twilioPhoneNumber: e.target.value })}
+                    placeholder="+16045550199"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                    Messaging Service SID <span className="text-[10px] text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.twilioMessagingServiceSid || ''}
+                    onChange={(e) => setSettings({ ...settings, twilioMessagingServiceSid: e.target.value })}
+                    placeholder="MGxxxxxxxxxxxxxxx"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Live Test Twilio Section */}
+              <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-100 space-y-2">
+                <label className="text-[11px] font-bold text-emerald-950 block">
+                  Verify Twilio API & Send Test SMS
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Recipient phone (e.g. +16045550199)"
+                    value={testPhoneRecipient}
+                    onChange={(e) => setTestPhoneRecipient(e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-emerald-200 bg-white font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleTestTwilio}
+                    disabled={testingTwilio}
+                    className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0 disabled:opacity-50 shadow-xs"
+                  >
+                    {testingTwilio ? (
+                      <>
+                        <Clock className="w-3.5 h-3.5 animate-spin" /> Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" /> Test SMS
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {twilioTestResult && (
+                  <div
+                    className={`p-2.5 rounded-lg text-xs flex items-start gap-1.5 font-medium ${
+                      twilioTestResult.success
+                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        : 'bg-rose-100 text-rose-900 border border-rose-300'
+                    }`}
+                  >
+                    {twilioTestResult.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    )}
+                    <span>{twilioTestResult.message}</span>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleSaveAll()}
+                className="w-full py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
+              >
+                Save Twilio Settings
+              </button>
+            </div>
+          </div>
+
+          {/* 2. SMTP EMAIL SERVER CONFIGURATION CARD */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4 relative overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
+                  <Server className="w-5 h-5" />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">SMTP Email Server</h2>
@@ -320,7 +530,7 @@ export default function SettingsPage() {
             </div>
 
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Emails for invoices, estimates, and seasonal reminders will be delivered directly from your company address via this SMTP server.
+              Estimates, invoices, and seasonal reminders will be delivered from your company address via this SMTP mail server.
             </p>
 
             <div className="space-y-3">
@@ -372,7 +582,7 @@ export default function SettingsPage() {
                 </label>
                 <div className="relative">
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showSmtpPassword ? 'text' : 'password'}
                     value={settings.smtpPass || ''}
                     onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value })}
                     placeholder="••••••••••••••••"
@@ -380,10 +590,10 @@ export default function SettingsPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowSmtpPassword(!showSmtpPassword)}
                     className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
                   >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showSmtpPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
@@ -492,12 +702,12 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* 2. Business Card */}
+          {/* 3. Business Profile Card */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Business Profile</h2>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Shows on estimates, invoices, and communication dispatches.
+                Shows on estimates, invoices, and customer communications.
               </p>
             </div>
 
@@ -566,20 +776,10 @@ export default function SettingsPage() {
                   className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 font-mono text-[11px] text-blue-700 bg-slate-50"
                 />
               </div>
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => handleSaveAll()}
-                  className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
-                >
-                  Save Business Info
-                </button>
-              </div>
             </div>
           </div>
 
-          {/* 3. Crew Card */}
+          {/* 4. Crew Members Card */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Crew Members</h2>
@@ -655,7 +855,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* 4. Account Card */}
+          {/* 5. Account Password Card */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Account</h2>
@@ -706,9 +906,9 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* ================= RIGHT COLUMN (7 cols) ================= */}
+        {/* ================= RIGHT COLUMN (6 cols) ================= */}
         {/* Services & Prices Manager (Roof Matrix + Custom Services) */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs space-y-6">
+        <div className="lg:col-span-6 bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs space-y-6">
           <div>
             <h2 className="text-base font-bold text-slate-900">Services and prices</h2>
             <p className="text-xs text-slate-500 mt-0.5">

@@ -220,6 +220,21 @@ export async function dispatchAutomatedMessage(params: DispatchTriggerParams): P
       }
     }
 
+    // 2. If channel includes SMS and recipient phone is present, dispatch through Twilio SMS Service
+    let twilioSid = undefined;
+    if ((targetChannel === 'sms' || targetChannel === 'both') && params.customerPhone) {
+      try {
+        const { sendTwilioSms } = await import('./twilioService');
+        const smsRes = await sendTwilioSms({
+          to: params.customerPhone,
+          body: content.smsText,
+        });
+        twilioSid = smsRes.sid;
+      } catch (smsErr) {
+        console.error('Twilio SMS transmission error:', smsErr);
+      }
+    }
+
     const newLog = await CommunicationLog.create({
       customerId: customerObjectId,
       customerName: params.customerName || 'Customer',
@@ -238,6 +253,7 @@ export async function dispatchAutomatedMessage(params: DispatchTriggerParams): P
         emailBody: content.emailBody,
         clientUrl: content.clientUrl,
         channel: targetChannel,
+        twilioSid,
         params,
       },
     });

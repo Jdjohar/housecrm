@@ -58,6 +58,12 @@ export interface ISetting extends Document {
   smtpFromName?: string;
   smtpFromEmail?: string;
   smtpEnabled?: boolean;
+  // Twilio SMS Settings
+  twilioAccountSid?: string;
+  twilioAuthToken?: string;
+  twilioPhoneNumber?: string;
+  twilioMessagingServiceSid?: string;
+  twilioEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -156,6 +162,12 @@ const SettingSchema = new Schema<ISetting>(
     smtpFromName: { type: String, default: 'H&H House Maintenance' },
     smtpFromEmail: { type: String, default: 'info@hnhpros.ca' },
     smtpEnabled: { type: Boolean, default: false },
+    // Twilio Configuration
+    twilioAccountSid: { type: String, default: '' },
+    twilioAuthToken: { type: String, default: '' },
+    twilioPhoneNumber: { type: String, default: '' },
+    twilioMessagingServiceSid: { type: String, default: '' },
+    twilioEnabled: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
