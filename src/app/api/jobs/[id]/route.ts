@@ -124,24 +124,43 @@ export async function PUT(
         const tax = job.includeGst === false ? 0 : (Number(job.tax) || 0);
         const includeGst = job.includeGst !== false && tax > 0;
         const total = Number(job.totalAmount) || Number((subtotal + tax).toFixed(2));
-        const amountPaid = Number(job.depositPaid) || 0;
-        const balanceDue = job.balanceDue !== undefined ? Number(job.balanceDue) : Math.max(0, Number((total - amountPaid).toFixed(2)));
+        const depositAmt = Number(job.depositPaid) || 0;
 
-        let initialPayments = [];
-        if (amountPaid > 0) {
+        let initialPayments: any[] = [];
+        if (depositAmt > 0) {
           initialPayments.push({
-            amount: amountPaid,
+            amount: depositAmt,
             paymentDate: job.createdAt || new Date(),
             paymentMethod: job.depositPaymentMethod || 'e-Transfer',
             collectedBy: job.depositCollectedBy || 'Charanjeet Brar',
             reference: `DEP-${job.jobNumber}`,
-            notes: `Deposit of $${amountPaid.toFixed(2)} received during booking`,
+            notes: `Deposit of $${depositAmt.toFixed(2)} received during booking`,
             createdAt: new Date(),
           });
         }
 
+        // Check if payment was collected on the spot during completion
+        const recordPaymentNow = body.recordPaymentNow === true || body.collectPaymentNow === true;
+        const paymentNowAmount = Number(body.paymentAmount) || 0;
+
+        if (recordPaymentNow && paymentNowAmount > 0) {
+          initialPayments.push({
+            amount: paymentNowAmount,
+            paymentDate: new Date(),
+            paymentMethod: body.paymentMethod || 'e-Transfer',
+            collectedBy: body.collectedBy || 'Charanjeet Brar',
+            reference: body.paymentReference || `REC-${job.jobNumber}`,
+            notes: body.paymentNotes || 'Payment received on service completion',
+            createdAt: new Date(),
+          });
+        }
+
+        const amountPaid = initialPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        const balanceDue = Math.max(0, Number((total - amountPaid).toFixed(2)));
+        const isFullyPaid = balanceDue <= 0.01 && total > 0;
+
         let invStatus: 'sent' | 'draft' | 'partially_paid' | 'paid' | 'overdue' = 'sent';
-        if (balanceDue <= 0.01 && total > 0) {
+        if (isFullyPaid) {
           invStatus = 'paid';
         } else if (amountPaid > 0) {
           invStatus = 'partially_paid';
@@ -172,22 +191,52 @@ export async function PUT(
           balanceDue,
           payments: initialPayments,
           status: invStatus,
+          paymentMethod: body.paymentMethod || (depositAmt > 0 ? job.depositPaymentMethod : undefined),
+          paymentCollectedBy: body.collectedBy || (depositAmt > 0 ? job.depositCollectedBy : undefined),
           dueDate: new Date(Date.now() + 7 * 24 * 3600 * 1000),
           sentAt: new Date(),
-          paidAt: invStatus === 'paid' ? new Date() : undefined,
+          paidAt: isFullyPaid ? new Date() : undefined,
         });
 
-        // Trigger Sequence #6: Invoice Sent Notice
-        await dispatchAutomatedMessage({
-          trigger: 'invoice_sent',
-          customerId: job.customerId.toString(),
-          customerName: job.customerName,
-          customerPhone: job.customerPhone,
-          customerEmail: job.customerEmail,
-          referenceId: createdInvoice._id.toString(),
-          referenceNumber: invoiceNumber,
-          amount: balanceDue > 0 ? balanceDue : total,
-        });
+        // Notifications
+        if (recordPaymentNow && paymentNowAmount > 0 && body.sendReceiptNow !== false) {
+          // Trigger Sequence #7: Payment Received Notice
+          await dispatchAutomatedMessage({
+            trigger: 'payment_received',
+            customerId: job.customerId.toString(),
+            customerName: job.customerName,
+            customerPhone: job.customerPhone,
+            customerEmail: job.customerEmail,
+            referenceId: createdInvoice._id.toString(),
+            referenceNumber: invoiceNumber,
+            amount: paymentNowAmount,
+          });
+        }
+
+        if (isFullyPaid && body.sendReviewRequestNow !== false) {
+          // Trigger Sequence #8: 5-Star Review Funnel
+          await dispatchAutomatedMessage({
+            trigger: 'review_request',
+            customerId: job.customerId.toString(),
+            customerName: job.customerName,
+            customerPhone: job.customerPhone,
+            customerEmail: job.customerEmail,
+            referenceId: createdInvoice._id.toString(),
+            referenceNumber: invoiceNumber,
+          });
+        } else if (!isFullyPaid) {
+          // Trigger Sequence #6: Invoice Sent Notice with remaining balance
+          await dispatchAutomatedMessage({
+            trigger: 'invoice_sent',
+            customerId: job.customerId.toString(),
+            customerName: job.customerName,
+            customerPhone: job.customerPhone,
+            customerEmail: job.customerEmail,
+            referenceId: createdInvoice._id.toString(),
+            referenceNumber: invoiceNumber,
+            amount: balanceDue > 0 ? balanceDue : total,
+          });
+        }
       }
 
       return NextResponse.json({

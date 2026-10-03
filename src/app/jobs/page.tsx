@@ -16,18 +16,16 @@ import {
   FileText,
   DollarSign,
   Search,
-  SlidersHorizontal,
   Table as TableIcon,
   LayoutGrid,
   Edit3,
   Trash2,
   Phone,
-  Mail,
+  CreditCard,
   Building2,
+  Check,
   AlertCircle,
-  ExternalLink,
-  ChevronRight,
-  Filter,
+  Loader2,
 } from 'lucide-react';
 import EstimatePdfDocument from '@/components/EstimatePdfDocument';
 
@@ -42,6 +40,18 @@ export default function JobsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'upcoming' | 'done' | 'unpaid' | 'cancelled'>('all');
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+
+  // COMPLETE JOB & COLLECT PAYMENT MODAL STATE
+  const [completeModalJob, setCompleteModalJob] = useState<any | null>(null);
+  const [completionNotes, setCompletionNotes] = useState('All services completed per H&H quality checklist. Site cleaned and inspected.');
+  const [collectPaymentNow, setCollectPaymentNow] = useState(true);
+  const [completionPayAmount, setCompletionPayAmount] = useState<number | string>(0);
+  const [completionPayMethod, setCompletionPayMethod] = useState('Interac e-Transfer');
+  const [completionPayCollectedBy, setCompletionPayCollectedBy] = useState('Charanjeet Brar');
+  const [completionPayReference, setCompletionPayReference] = useState('');
+  const [completionSendReceipt, setCompletionSendReceipt] = useState(true);
+  const [completionSendReview, setCompletionSendReview] = useState(true);
+  const [completingInProgress, setCompletingInProgress] = useState(false);
 
   // Live Crew Dispatch ETA Modal
   const [etaModalJob, setEtaModalJob] = useState<any | null>(null);
@@ -85,7 +95,6 @@ export default function JobsPage() {
   const [sendConfirmationNow, setSendConfirmationNow] = useState(true);
 
   // Line items
-  const [serviceSearchQuery, setServiceSearchQuery] = useState('');
   const [items, setItems] = useState([
     {
       service: 'Gutter Cleaning & Downspout Flush',
@@ -172,7 +181,7 @@ export default function JobsPage() {
     { name: 'Gate installation', price: 400, unit: 'per job' },
   ];
 
-  // Helper calculations for New Booking
+  // Calculations for New Booking
   const calculateSubtotal = () => items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
   const calculateTax = () => {
     if (!includeGst) return 0;
@@ -186,7 +195,7 @@ export default function JobsPage() {
     return Math.max(0, Number((total - deposit).toFixed(2)));
   };
 
-  // Helper calculations for Edit Booking
+  // Calculations for Edit Booking
   const calculateEditSubtotal = () => editItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
   const calculateEditTax = () => {
     if (!editIncludeGst) return 0;
@@ -212,22 +221,11 @@ export default function JobsPage() {
           total: presetSvc.price || presetSvc.defaultPrice || 200,
         },
       ]);
-    } else if (type === 'cost') {
-      setItems([
-        ...items,
-        {
-          service: 'Custom Material / Extra Fee',
-          description: 'Disposal fee, materials or specialized equipment',
-          quantity: 1,
-          unitPrice: 75,
-          total: 75,
-        },
-      ]);
     } else {
       setItems([
         ...items,
         {
-          service: 'Custom Cleaning Service',
+          service: 'Custom Service',
           description: 'Specialized property cleaning',
           quantity: 1,
           unitPrice: 150,
@@ -237,7 +235,7 @@ export default function JobsPage() {
     }
   };
 
-  const handleAddEditItem = (presetSvc?: any, type: 'service' | 'cost' = 'service') => {
+  const handleAddEditItem = (presetSvc?: any) => {
     if (presetSvc) {
       setEditItems([
         ...editItems,
@@ -247,17 +245,6 @@ export default function JobsPage() {
           quantity: 1,
           unitPrice: presetSvc.price || presetSvc.defaultPrice || 200,
           total: presetSvc.price || presetSvc.defaultPrice || 200,
-        },
-      ]);
-    } else if (type === 'cost') {
-      setEditItems([
-        ...editItems,
-        {
-          service: 'Custom Material / Extra Fee',
-          description: 'Disposal fee, materials or specialized equipment',
-          quantity: 1,
-          unitPrice: 75,
-          total: 75,
         },
       ]);
     } else {
@@ -561,6 +548,72 @@ export default function JobsPage() {
     }
   };
 
+  // Action: Open Complete Job & Payment Modal
+  const handleOpenCompleteModal = (job: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const balance =
+      job.balanceDue !== undefined
+        ? Number(job.balanceDue)
+        : Math.max(0, (Number(job.totalAmount) || 0) - (Number(job.depositPaid) || 0));
+
+    setCompleteModalJob(job);
+    setCompletionNotes('All services completed per H&H quality checklist. Site cleaned and inspected.');
+    setCollectPaymentNow(balance > 0.01);
+    setCompletionPayAmount(balance > 0.01 ? balance : 0);
+    setCompletionPayMethod('Interac e-Transfer');
+    setCompletionPayCollectedBy(job.depositCollectedBy || 'Charanjeet Brar');
+    setCompletionPayReference(`REC-${job.jobNumber}`);
+    setCompletionSendReceipt(true);
+    setCompletionSendReview(true);
+  };
+
+  // Action: Confirm Job Completion & Invoice
+  const handleConfirmCompleteJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!completeModalJob) return;
+
+    setCompletingInProgress(true);
+    try {
+      const res = await fetch(`/api/jobs/${completeModalJob._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mark_completed',
+          createInvoiceNow: true,
+          completionNotes,
+          recordPaymentNow: collectPaymentNow && Number(completionPayAmount) > 0,
+          paymentAmount: Number(completionPayAmount) || 0,
+          paymentMethod: completionPayMethod,
+          collectedBy: completionPayCollectedBy,
+          paymentReference: completionPayReference,
+          paymentNotes: 'Final balance payment received on service completion',
+          sendReceiptNow: completionSendReceipt,
+          sendReviewRequestNow: completionSendReview,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setCompleteModalJob(null);
+        setActionNotice(
+          `Job #${completeModalJob.jobNumber} completed! Invoice #${
+            data.invoice?.invoiceNumber || ''
+          } generated${
+            collectPaymentNow && Number(completionPayAmount) > 0 ? ' & marked as PAID' : ''
+          }.`
+        );
+        setTimeout(() => setActionNotice(null), 5000);
+        fetchJobs();
+      } else {
+        alert(data.error || 'Failed to complete job');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCompletingInProgress(false);
+    }
+  };
+
   // Action: Send Day Before SMS
   const handleSendDayBefore = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -597,30 +650,6 @@ export default function JobsPage() {
       if (data.success) {
         setEtaModalJob(null);
         setActionNotice(`Crew On The Way SMS (ETA: ${etaMinutes} mins) dispatched!`);
-        setTimeout(() => setActionNotice(null), 3500);
-        fetchJobs();
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Action: Mark Job Completed
-  const handleMarkCompleted = async (id: string, createInvoiceNow = true, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    try {
-      const res = await fetch(`/api/jobs/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mark_completed',
-          createInvoiceNow,
-          completionNotes: 'All services completed per H&H quality checklist. Site cleaned and inspected.',
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setActionNotice('Job completed! "Service Complete" SMS & Invoice generated and dispatched.');
         setTimeout(() => setActionNotice(null), 3500);
         fetchJobs();
       }
@@ -730,7 +759,7 @@ export default function JobsPage() {
             Bookings &amp; Live Dispatch Pipeline
           </h1>
           <p className="text-xs text-slate-500">
-            View all bookings in a searchable table, filter upcoming/unpaid, click to edit &amp; manage live dispatch
+            View all bookings in a searchable table, filter upcoming/unpaid, click to edit &amp; complete with instant payment
           </p>
         </div>
 
@@ -1086,6 +1115,18 @@ export default function JobsPage() {
                         {/* Actions */}
                         <td className="py-3.5 px-4 align-top text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            {/* Complete & Collect Payment Button */}
+                            {!isCompleted && !isCancelled && (
+                              <button
+                                onClick={(e) => handleOpenCompleteModal(job, e)}
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs flex items-center gap-1 cursor-pointer"
+                                title="Complete Service &amp; Process Invoice / Payment"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Complete</span>
+                              </button>
+                            )}
+
                             {/* Edit Button */}
                             <button
                               onClick={(e) => handleOpenEditModal(job, e)}
@@ -1116,15 +1157,6 @@ export default function JobsPage() {
                                   title="Dispatch Crew (Live ETA SMS)"
                                 >
                                   <Flame className="w-4 h-4" />
-                                </button>
-
-                                {/* Complete Job */}
-                                <button
-                                  onClick={(e) => handleMarkCompleted(job._id, true, e)}
-                                  className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition cursor-pointer"
-                                  title="Complete Service &amp; Generate Invoice"
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
                                 </button>
                               </>
                             )}
@@ -1266,13 +1298,24 @@ export default function JobsPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
+                      {/* Complete & Invoice Button */}
+                      {!isCompleted && job.status !== 'cancelled' && (
+                        <button
+                          onClick={(e) => handleOpenCompleteModal(job, e)}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Complete &amp; Invoice</span>
+                        </button>
+                      )}
+
                       {/* Edit Booking Button */}
                       <button
                         onClick={(e) => handleOpenEditModal(job, e)}
                         className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
-                        <span>Edit Booking</span>
+                        <span>Edit</span>
                       </button>
 
                       {/* Work Order PDF Button */}
@@ -1306,15 +1349,6 @@ export default function JobsPage() {
                             <Flame className="w-3 h-3" />
                             <span>Dispatch ETA</span>
                           </button>
-
-                          {/* Complete Job Button */}
-                          <button
-                            onClick={(e) => handleMarkCompleted(job._id, true, e)}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1 cursor-pointer"
-                          >
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>Complete &amp; Invoice</span>
-                          </button>
                         </>
                       )}
                     </div>
@@ -1323,6 +1357,234 @@ export default function JobsPage() {
               );
             })
           )}
+        </div>
+      )}
+
+      {/* QUICK COMPLETE JOB & COLLECT PAYMENT MODAL */}
+      {completeModalJob && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-hidden">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 my-auto">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shadow-xs">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base sm:text-lg text-slate-900">
+                    Complete Booking #{completeModalJob.jobNumber}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Generate final invoice, collect payment &amp; dispatch review sequence
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCompleteModalJob(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form Body */}
+            <form onSubmit={handleConfirmCompleteJob} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 text-xs">
+                {/* 1. Job Summary Card */}
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">{completeModalJob.customerName}</div>
+                      <div className="text-slate-500 text-[11px]">{completeModalJob.customerPhone} • {completeModalJob.address}</div>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                      {completeModalJob.jobNumber}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 text-center">
+                    <div className="bg-white p-2 rounded-xl border border-slate-100">
+                      <div className="text-[10px] text-slate-400 font-medium">Total Price</div>
+                      <div className="font-black text-slate-900 text-sm">
+                        ${(Number(completeModalJob.totalAmount) || 0).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-2 rounded-xl border border-slate-100">
+                      <div className="text-[10px] text-emerald-600 font-medium">Deposit Paid</div>
+                      <div className="font-black text-emerald-700 text-sm">
+                        ${(Number(completeModalJob.depositPaid) || 0).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-50 p-2 rounded-xl border border-amber-200">
+                      <div className="text-[10px] text-amber-800 font-medium">Remaining Due</div>
+                      <div className="font-black text-amber-950 text-sm">
+                        ${(
+                          completeModalJob.balanceDue !== undefined
+                            ? Number(completeModalJob.balanceDue)
+                            : Math.max(0, (Number(completeModalJob.totalAmount) || 0) - (Number(completeModalJob.depositPaid) || 0))
+                        ).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Completion Checklist & Notes */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    Service Completion Notes:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={completionNotes}
+                    onChange={(e) => setCompletionNotes(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium resize-none text-xs"
+                    placeholder="e.g. All services completed, gutters cleaned, site washed down..."
+                  />
+                </div>
+
+                {/* 3. Payment Collection Section */}
+                <div className="p-4 rounded-2xl border transition bg-emerald-50/70 border-emerald-200">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer font-black text-emerald-950 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={collectPaymentNow}
+                        onChange={(e) => setCollectPaymentNow(e.target.checked)}
+                        className="w-4 h-4 accent-emerald-600 rounded"
+                      />
+                      <span>💳 Customer Paid Balance on Site Now?</span>
+                    </label>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
+                      {collectPaymentNow ? 'Mark Invoice as PAID' : 'Send UNPAID Invoice'}
+                    </span>
+                  </div>
+
+                  {collectPaymentNow ? (
+                    <div className="mt-3.5 space-y-3 pt-3 border-t border-emerald-200/80">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-emerald-900 block mb-1">
+                            Amount Paid ($):
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={completionPayAmount}
+                            onChange={(e) => setCompletionPayAmount(e.target.value)}
+                            required={collectPaymentNow}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-white font-black text-emerald-950 text-sm"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-emerald-900 block mb-1">
+                            Payment Method:
+                          </label>
+                          <select
+                            value={completionPayMethod}
+                            onChange={(e) => setCompletionPayMethod(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-white font-semibold text-emerald-950"
+                          >
+                            <option value="Interac e-Transfer">Interac e-Transfer</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Credit Card">Credit Card</option>
+                            <option value="Cheque">Cheque</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-emerald-900 block mb-1">
+                            Collected By (Owner):
+                          </label>
+                          <select
+                            value={completionPayCollectedBy}
+                            onChange={(e) => setCompletionPayCollectedBy(e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-white font-semibold text-emerald-950"
+                          >
+                            <option value="Charanjeet Brar">Charanjeet Brar</option>
+                            <option value="Manpreet Gill">Manpreet Gill</option>
+                            <option value="Company Bank Account">Company Bank Account</option>
+                            <option value="Cash with Crew/Office">Cash with Crew / Office</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-emerald-900 block mb-1">
+                            Receipt / Ref #:
+                          </label>
+                          <input
+                            type="text"
+                            value={completionPayReference}
+                            onChange={(e) => setCompletionPayReference(e.target.value)}
+                            placeholder="e.g. REC-4001"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-white font-medium text-emerald-950"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Automated Communication Toggles */}
+                      <div className="pt-2 border-t border-emerald-200/60 space-y-1.5 text-[11px] text-emerald-900">
+                        <label className="flex items-center gap-2 cursor-pointer font-medium">
+                          <input
+                            type="checkbox"
+                            checked={completionSendReceipt}
+                            onChange={(e) => setCompletionSendReceipt(e.target.checked)}
+                            className="w-3.5 h-3.5 accent-emerald-600 rounded"
+                          />
+                          <span>✓ Auto-send Official Payment Receipt SMS / Email</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer font-medium">
+                          <input
+                            type="checkbox"
+                            checked={completionSendReview}
+                            onChange={(e) => setCompletionSendReview(e.target.checked)}
+                            className="w-3.5 h-3.5 accent-emerald-600 rounded"
+                          />
+                          <span>⭐ Auto-trigger 5-Star Google Review Request SMS</span>
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2.5 text-[11px] text-slate-500 bg-white/70 p-2.5 rounded-xl border border-slate-200">
+                      ℹ️ Invoice will be created as <strong>SENT / UNPAID</strong> with remaining balance due. The customer will receive an SMS/Email link to pay online or via e-Transfer.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setCompleteModalJob(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={completingInProgress}
+                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {completingInProgress ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Processing Completion...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Complete Job &amp; Process Invoice</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -1574,7 +1836,7 @@ export default function JobsPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleAddEditItem(undefined, 'service')}
+                            onClick={() => handleAddEditItem()}
                             className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
                           >
                             + Custom Item
@@ -1653,7 +1915,7 @@ export default function JobsPage() {
                           onChange={(e) => {
                             if (!e.target.value) return;
                             const svc = availableServices.find((s: any) => s.name === e.target.value);
-                            if (svc) handleAddEditItem(svc, 'service');
+                            if (svc) handleAddEditItem(svc);
                             e.target.value = '';
                           }}
                           className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium"
@@ -2112,7 +2374,7 @@ export default function JobsPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleAddItem(undefined, 'service')}
+                            onClick={() => handleAddItem()}
                             className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
                           >
                             + Custom
@@ -2191,7 +2453,7 @@ export default function JobsPage() {
                           onChange={(e) => {
                             if (!e.target.value) return;
                             const svc = availableServices.find((s: any) => s.name === e.target.value);
-                            if (svc) handleAddItem(svc, 'service');
+                            if (svc) handleAddItem(svc);
                             e.target.value = '';
                           }}
                           className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium"
