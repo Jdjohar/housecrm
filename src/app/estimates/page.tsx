@@ -422,13 +422,13 @@ export default function EstimatesPage() {
                 </div>
 
                 {/* Pricing & Quick Actions */}
-                <div className="flex items-center gap-4 self-end lg:self-center">
-                  <div className="text-right">
-                    <div className="text-xs text-slate-400 font-medium">Total Amount</div>
-                    <div className="text-lg font-black text-slate-900">${(Number(est.total) || 0).toFixed(2)}</div>
+                <div className="flex flex-col sm:flex-row lg:flex-row items-start sm:items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 w-full lg:w-auto">
+                  <div className="text-left sm:text-right">
+                    <div className="text-[10px] sm:text-xs text-slate-400 font-medium">Total Amount</div>
+                    <div className="text-base sm:text-lg font-black text-slate-900">${(Number(est.total) || 0).toFixed(2)}</div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto">
                     {/* View / Export PDF Button */}
                     <button
                       onClick={() => handleOpenPdfModal(est)}
@@ -792,41 +792,42 @@ export default function EstimatesPage() {
                   <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                     {items.map((item, idx) => (
                       <div key={idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
-                        <div className="grid grid-cols-12 gap-2 items-center">
-                          <div className="col-span-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                          <div className="sm:col-span-6">
                             <input
                               type="text"
                               value={item.service}
                               onChange={(e) => handleItemChange(idx, 'service', e.target.value)}
                               placeholder="Service name"
-                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold"
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold text-xs"
                             />
                           </div>
-                          <div className="col-span-2">
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                              placeholder="Qty"
-                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white"
-                            />
-                          </div>
-                          <div className="col-span-3">
-                            <input
-                              type="number"
-                              min="0"
-                              value={item.unitPrice}
-                              onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
-                              placeholder="Price ($)"
-                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white"
-                            />
-                          </div>
-                          <div className="col-span-1 text-center">
+                          <div className="sm:col-span-6 flex items-center gap-2">
+                            <div className="w-20">
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                                placeholder="Qty"
+                                className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <input
+                                type="number"
+                                min="0"
+                                value={item.unitPrice}
+                                onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
+                                placeholder="Price ($)"
+                                className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                              />
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(idx)}
-                              className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                              className="p-1.5 text-slate-400 hover:text-rose-500 active:scale-95 transition cursor-pointer shrink-0 tap-target flex items-center justify-center"
+                              title="Remove item"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

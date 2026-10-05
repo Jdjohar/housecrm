@@ -446,7 +446,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Phone Number & Messaging Service SID */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="text-[11px] font-semibold text-slate-600 block mb-1">
                     Twilio Phone Number
@@ -478,7 +478,7 @@ export default function SettingsPage() {
                 <label className="text-[11px] font-bold text-emerald-950 block">
                   Verify Twilio API & Send Test SMS
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     placeholder="Recipient phone (e.g. +16045550199)"
@@ -490,7 +490,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={handleTestTwilio}
                     disabled={testingTwilio}
-                    className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0 disabled:opacity-50 shadow-xs"
+                    className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50 shadow-xs"
                   >
                     {testingTwilio ? (
                       <>
@@ -555,8 +555,8 @@ export default function SettingsPage() {
 
             <div className="space-y-3">
               {/* Host & Port */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="sm:col-span-2">
                   <label className="text-[11px] font-semibold text-slate-600 block mb-1">
                     SMTP Host / Server
                   </label>
@@ -619,7 +619,7 @@ export default function SettingsPage() {
               </div>
 
               {/* From Name & From Email */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="text-[11px] font-semibold text-slate-600 block mb-1">
                     From Sender Name
@@ -668,7 +668,7 @@ export default function SettingsPage() {
                 <label className="text-[11px] font-bold text-blue-900 block">
                   Test SMTP Connection & Send Verification Email
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="email"
                     placeholder="Recipient email (e.g. your@gmail.com)"
@@ -680,7 +680,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={handleTestSmtp}
                     disabled={testingSmtp}
-                    className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+                    className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
                   >
                     {testingSmtp ? (
                       <>
@@ -744,7 +744,7 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">
                     GST rate %
@@ -817,9 +817,9 @@ export default function SettingsPage() {
                 {settings.crewMembers.map((member: any, i: number) => (
                   <div
                     key={i}
-                    className="p-3 bg-slate-50 rounded-2xl border border-slate-200 grid grid-cols-12 gap-2 items-center text-xs"
+                    className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:grid sm:grid-cols-12 gap-2 items-center text-xs"
                   >
-                    <div className="col-span-5">
+                    <div className="w-full sm:col-span-5">
                       <input
                         type="text"
                         placeholder="Name"
@@ -828,8 +828,8 @@ export default function SettingsPage() {
                         className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
                       />
                     </div>
-                    <div className="col-span-4">
-                      <div className="relative">
+                    <div className="w-full sm:col-span-4 flex items-center gap-2">
+                      <div className="relative flex-1">
                         <span className="absolute left-2 top-1.5 text-slate-400 font-semibold">$</span>
                         <input
                           type="number"
@@ -841,13 +841,14 @@ export default function SettingsPage() {
                           className="w-full pl-5 pr-2 py-1.5 rounded-lg border border-slate-300 bg-white"
                         />
                       </div>
+                      <span className="sm:hidden text-slate-500 text-[11px]">/ hour</span>
                     </div>
-                    <div className="col-span-2 text-slate-500 text-[11px]">/ hour</div>
-                    <div className="col-span-1 text-center">
+                    <div className="hidden sm:block sm:col-span-2 text-slate-500 text-[11px]">/ hour</div>
+                    <div className="w-full sm:w-auto sm:col-span-1 flex justify-end">
                       <button
                         type="button"
                         onClick={() => handleRemoveCrew(i)}
-                        className="text-slate-400 hover:text-rose-600"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -891,7 +892,7 @@ export default function SettingsPage() {
             )}
 
             <form onSubmit={handleChangePassword} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">
                     New password

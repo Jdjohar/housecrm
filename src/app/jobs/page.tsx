@@ -1428,11 +1428,7 @@ export default function JobsPage() {
                     <div className="bg-amber-50 p-2 rounded-xl border border-amber-200">
                       <div className="text-[10px] text-amber-800 font-medium">Remaining Due</div>
                       <div className="font-black text-amber-950 text-sm">
-                        ${(
-                          completeModalJob.balanceDue !== undefined
-                            ? Number(completeModalJob.balanceDue)
-                            : Math.max(0, (Number(completeModalJob.totalAmount) || 0) - (Number(completeModalJob.depositPaid) || 0))
-                        ).toFixed(2)}
+                        ${getJobBalanceDue(completeModalJob, invoices).toFixed(2)}
                       </div>
                     </div>
                   </div>

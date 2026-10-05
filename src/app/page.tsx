@@ -262,22 +262,22 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* 1. TOP 4 METRIC BOXES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* BOX 1: Today Total Bookings & Total Price */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-5 rounded-3xl shadow-md shadow-blue-500/10 border border-blue-500/30 flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-md shadow-blue-500/10 border border-blue-500/30 flex flex-col justify-between relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-blue-100 uppercase tracking-wider">
+            <span className="text-[11px] sm:text-xs font-bold text-blue-100 uppercase tracking-wider">
               Today&apos;s Bookings
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-white/15 text-white flex items-center justify-center backdrop-blur-xs">
-              <CalendarCheck className="w-5 h-5" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-white/15 text-white flex items-center justify-center backdrop-blur-xs">
+              <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black tracking-tight">
+          <div className="mt-2.5 sm:mt-3">
+            <div className="text-2xl sm:text-3xl font-black tracking-tight">
               ${todayTotalPrice.toFixed(2)}
             </div>
-            <div className="text-xs text-blue-100 font-semibold mt-1 flex items-center gap-1.5">
+            <div className="text-[11px] sm:text-xs text-blue-100 font-semibold mt-1 flex items-center gap-1.5 flex-wrap">
               <span className="bg-white/20 px-2 py-0.5 rounded-md font-bold">
                 {todayBookings.length} {todayBookings.length === 1 ? 'Job' : 'Jobs'} Scheduled
               </span>
@@ -287,20 +287,20 @@ export default function DashboardPage() {
         </div>
 
         {/* BOX 2: Current Week Total Bookings & Total Price */}
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white p-5 rounded-3xl shadow-md shadow-indigo-500/10 border border-indigo-500/30 flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-md shadow-indigo-500/10 border border-indigo-500/30 flex flex-col justify-between relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-indigo-100 uppercase tracking-wider">
+            <span className="text-[11px] sm:text-xs font-bold text-indigo-100 uppercase tracking-wider">
               This Week&apos;s Bookings
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-white/15 text-white flex items-center justify-center backdrop-blur-xs">
-              <TrendingUp className="w-5 h-5" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-white/15 text-white flex items-center justify-center backdrop-blur-xs">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black tracking-tight">
+          <div className="mt-2.5 sm:mt-3">
+            <div className="text-2xl sm:text-3xl font-black tracking-tight">
               ${currentWeekTotalPrice.toFixed(2)}
             </div>
-            <div className="text-xs text-indigo-100 font-semibold mt-1 flex items-center gap-1.5">
+            <div className="text-[11px] sm:text-xs text-indigo-100 font-semibold mt-1 flex items-center gap-1.5 flex-wrap">
               <span className="bg-white/20 px-2 py-0.5 rounded-md font-bold">
                 {currentWeekBookings.length} {currentWeekBookings.length === 1 ? 'Booking' : 'Bookings'}
               </span>
@@ -310,20 +310,20 @@ export default function DashboardPage() {
         </div>
 
         {/* BOX 3: Waiting on Payment, Total Price & Count */}
-        <div className="bg-gradient-to-br from-amber-500 to-amber-700 text-white p-5 rounded-3xl shadow-md shadow-amber-500/10 border border-amber-400/30 flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-gradient-to-br from-amber-500 to-amber-700 text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-md shadow-amber-500/10 border border-amber-400/30 flex flex-col justify-between relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-100 uppercase tracking-wider">
+            <span className="text-[11px] sm:text-xs font-bold text-amber-100 uppercase tracking-wider">
               Waiting on Payment
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-white/15 text-white flex items-center justify-center backdrop-blur-xs">
-              <AlertCircle className="w-5 h-5" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-white/15 text-white flex items-center justify-center backdrop-blur-xs">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black tracking-tight">
+          <div className="mt-2.5 sm:mt-3">
+            <div className="text-2xl sm:text-3xl font-black tracking-tight">
               ${unpaidTotalAmount.toFixed(2)}
             </div>
-            <div className="text-xs text-amber-100 font-semibold mt-1 flex items-center gap-1.5">
+            <div className="text-[11px] sm:text-xs text-amber-100 font-semibold mt-1 flex items-center gap-1.5 flex-wrap">
               <span className="bg-white/20 px-2 py-0.5 rounded-md font-bold">
                 {unpaidJobs.length} {unpaidJobs.length === 1 ? 'Job' : 'Jobs'} Unpaid
               </span>
@@ -333,46 +333,46 @@ export default function DashboardPage() {
         </div>
 
         {/* BOX 4: Total Revenue */}
-        <div className="bg-gradient-to-br from-emerald-600 to-teal-800 text-white p-5 rounded-3xl shadow-md shadow-emerald-500/10 border border-emerald-500/30 flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-gradient-to-br from-emerald-600 to-teal-800 text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-md shadow-emerald-500/10 border border-emerald-500/30 flex flex-col justify-between relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-100 uppercase tracking-wider">
+            <span className="text-[11px] sm:text-xs font-bold text-emerald-100 uppercase tracking-wider">
               Total Revenue
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-white/15 text-white flex items-center justify-center backdrop-blur-xs">
-              <DollarSign className="w-5 h-5" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-white/15 text-white flex items-center justify-center backdrop-blur-xs">
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black tracking-tight">
+          <div className="mt-2.5 sm:mt-3">
+            <div className="text-2xl sm:text-3xl font-black tracking-tight">
               ${totalRevenue.toFixed(2)}
             </div>
-            <div className="text-xs text-emerald-100 font-semibold mt-1 flex items-center gap-1.5">
+            <div className="text-[11px] sm:text-xs text-emerald-100 font-semibold mt-1 flex items-center gap-1.5 flex-wrap">
               <span className="bg-white/20 px-2 py-0.5 rounded-md font-bold">
                 All-Time
               </span>
-              <span>payments &amp; collected funds</span>
+              <span>collected funds</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* 2. TODAY'S BOOKINGS SECTION */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shrink-0">
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-slate-900">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base sm:text-lg font-black text-slate-900">
                   Today&apos;s Bookings &amp; Service Schedule
                 </h2>
-                <span className="text-xs font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] sm:text-xs font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
                   {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-[11px] sm:text-xs text-slate-500">
                 Live list of property services scheduled for execution today
               </p>
             </div>
@@ -381,7 +381,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/jobs"
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm flex items-center gap-1.5"
+              className="w-full sm:w-auto text-center px-4 py-2.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold transition shadow-sm flex items-center justify-center gap-1.5 tap-target"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>+ New Booking</span>
@@ -407,7 +407,7 @@ export default function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {todayBookings.map((job) => {
               const isCompleted = job.status === 'completed';
               const isEnRoute = job.status === 'en_route';
@@ -479,7 +479,7 @@ export default function DashboardPage() {
 
                     <Link
                       href="/jobs"
-                      className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold transition shadow-xs flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 active:scale-95 text-white text-xs font-bold transition shadow-xs flex items-center gap-1 tap-target"
                     >
                       <span>Manage</span>
                       <ArrowRight className="w-3 h-3" />
@@ -493,47 +493,49 @@ export default function DashboardPage() {
       </div>
 
       {/* 3. INTERACTIVE CALENDAR SECTION */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-5">
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-4 sm:space-y-5">
         {/* Calendar Header & Month Navigation */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
               <CalendarIcon className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900">
-                Service Calendar &amp; Bookings Schedule
+              <h2 className="text-base sm:text-lg font-black text-slate-900">
+                Service Calendar &amp; Bookings
               </h2>
-              <p className="text-xs text-slate-500">
-                Visual monthly calendar with scheduled bookings, job values &amp; dispatch dates
+              <p className="text-[11px] sm:text-xs text-slate-500">
+                Monthly schedule with booking indicators &amp; dispatch values
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2">
             <button
               onClick={prevMonth}
-              className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 active:scale-95 text-slate-700 transition cursor-pointer tap-target flex items-center justify-center"
               title="Previous Month"
+              aria-label="Previous Month"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <span className="font-black text-sm text-slate-900 px-3 min-w-[140px] text-center">
+            <span className="font-black text-xs sm:text-sm text-slate-900 px-2 sm:px-3 text-center truncate">
               {monthNames[calendarMonth]} {calendarYear}
             </span>
 
             <button
               onClick={nextMonth}
-              className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 active:scale-95 text-slate-700 transition cursor-pointer tap-target flex items-center justify-center"
               title="Next Month"
+              aria-label="Next Month"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
 
             <button
               onClick={jumpToToday}
-              className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer ml-1"
+              className="px-2.5 sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 text-xs font-bold transition cursor-pointer tap-target flex items-center justify-center ml-1"
             >
               Today
             </button>
@@ -543,10 +545,11 @@ export default function DashboardPage() {
         {/* 7-Column Calendar Grid */}
         <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-100 shadow-inner">
           {/* Weekday Labels */}
-          <div className="grid grid-cols-7 text-center bg-slate-50 border-b border-slate-200 py-2.5 text-xs font-bold text-slate-600 uppercase tracking-wider">
+          <div className="grid grid-cols-7 text-center bg-slate-50 border-b border-slate-200 py-2 text-[10px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider">
             {daysOfWeek.map((day, idx) => (
               <div key={idx} className={idx === 0 || idx === 6 ? 'text-slate-400' : ''}>
-                {day}
+                <span className="sm:hidden">{day.charAt(0)}</span>
+                <span className="hidden sm:inline">{day}</span>
               </div>
             ))}
           </div>
@@ -561,7 +564,7 @@ export default function DashboardPage() {
                 <div
                   key={idx}
                   onClick={() => setSelectedDate(cell.dateStr)}
-                  className={`min-h-[90px] sm:min-h-[105px] p-2 transition cursor-pointer flex flex-col justify-between ${
+                  className={`min-h-[60px] sm:min-h-[85px] md:min-h-[100px] p-1 sm:p-2 transition cursor-pointer flex flex-col justify-between select-none ${
                     cell.isCurrentMonth ? 'bg-white' : 'bg-slate-50/60 text-slate-400'
                   } ${cell.isToday ? 'bg-blue-50/40' : ''} ${
                     isSelected ? 'ring-2 ring-blue-600 ring-inset bg-blue-50/60' : 'hover:bg-slate-50'
@@ -570,7 +573,7 @@ export default function DashboardPage() {
                   {/* Top Day Header */}
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-xs font-bold rounded-lg w-6 h-6 flex items-center justify-center ${
+                      className={`text-[10px] sm:text-xs font-bold rounded-md sm:rounded-lg w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center ${
                         cell.isToday
                           ? 'bg-blue-600 text-white font-black shadow-xs'
                           : cell.isCurrentMonth
@@ -582,45 +585,55 @@ export default function DashboardPage() {
                     </span>
 
                     {hasBookings && (
-                      <span className="text-[10px] font-black bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded-full">
+                      <span className="text-[9px] sm:text-[10px] font-black bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded-full">
                         {cell.bookings.length}
                       </span>
                     )}
                   </div>
 
-                  {/* Booking Chips inside Day */}
+                  {/* Booking Chips inside Day (Full on sm+, compact dot on mobile) */}
                   <div className="space-y-1 mt-1 overflow-hidden">
-                    {cell.bookings.slice(0, 2).map((bk: any, bIdx: number) => {
-                      const isCompleted = bk.status === 'completed';
-                      const isEnRoute = bk.status === 'en_route';
+                    {/* Mobile compact dot indicator */}
+                    <div className="sm:hidden flex items-center gap-0.5 justify-center">
+                      {cell.bookings.slice(0, 3).map((_, bIdx) => (
+                        <span key={bIdx} className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                      ))}
+                    </div>
 
-                      return (
-                        <div
-                          key={bIdx}
-                          className={`text-[10px] p-1 rounded-md font-semibold truncate border ${
-                            isCompleted
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : isEnRoute
-                              ? 'bg-orange-50 text-orange-800 border-orange-200'
-                              : 'bg-blue-50 text-blue-800 border-blue-200'
-                          }`}
-                          title={`${bk.scheduledTime} - ${bk.customerName} (${bk.title})`}
-                        >
-                          <span className="font-bold">{bk.scheduledTime?.split(' ')[0]}:</span> {bk.customerName}
+                    {/* Tablet/Desktop detailed chips */}
+                    <div className="hidden sm:block space-y-1">
+                      {cell.bookings.slice(0, 2).map((bk: any, bIdx: number) => {
+                        const isCompleted = bk.status === 'completed';
+                        const isEnRoute = bk.status === 'en_route';
+
+                        return (
+                          <div
+                            key={bIdx}
+                            className={`text-[10px] p-1 rounded-md font-semibold truncate border ${
+                              isCompleted
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : isEnRoute
+                                ? 'bg-orange-50 text-orange-800 border-orange-200'
+                                : 'bg-blue-50 text-blue-800 border-blue-200'
+                            }`}
+                            title={`${bk.scheduledTime} - ${bk.customerName} (${bk.title})`}
+                          >
+                            <span className="font-bold">{bk.scheduledTime?.split(' ')[0]}:</span> {bk.customerName}
+                          </div>
+                        );
+                      })}
+
+                      {cell.bookings.length > 2 && (
+                        <div className="text-[9px] font-bold text-slate-500 pl-1">
+                          +{cell.bookings.length - 2} more
                         </div>
-                      );
-                    })}
-
-                    {cell.bookings.length > 2 && (
-                      <div className="text-[9px] font-bold text-slate-500 pl-1">
-                        +{cell.bookings.length - 2} more
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* Total Value for day */}
                   {hasBookings ? (
-                    <div className="text-[10px] font-bold text-slate-600 text-right mt-1">
+                    <div className="text-[9px] sm:text-[10px] font-bold text-slate-600 text-right mt-0.5">
                       ${cell.bookings.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0).toFixed(0)}
                     </div>
                   ) : (

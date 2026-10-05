@@ -167,32 +167,32 @@ export default function CommunicationSequenceModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Modal Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-5 flex items-center justify-between border-b border-slate-800">
+        <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-md">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-md shrink-0">
               <Sparkles className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-white">Auto Communication Dispatcher</h3>
-              <p className="text-xs text-blue-200">
+              <h3 className="font-bold text-base sm:text-lg text-white">Auto Communication Dispatcher</h3>
+              <p className="text-[11px] sm:text-xs text-blue-200">
                 Trigger & preview any of the 8 automated customer lifecycle messages for H&H
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition"
+            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-0 max-h-[75vh] overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-0 overflow-y-auto flex-1">
           {/* Left Column: Sequence Step Selector */}
-          <div className="md:col-span-5 bg-slate-50 p-4 border-r border-slate-200 overflow-y-auto max-h-[75vh] space-y-2">
+          <div className="md:col-span-5 bg-slate-50 p-4 border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto space-y-2">
             <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-1">
               Select 8-Stage Step
             </div>
@@ -216,7 +216,7 @@ export default function CommunicationSequenceModal({
                     {step.number}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{step.name}</div>
+                    <div className="font-semibold truncate text-xs sm:text-sm">{step.name}</div>
                     <div
                       className={`text-xs truncate mt-0.5 ${
                         isSelected ? 'text-blue-100' : 'text-slate-500'
@@ -231,9 +231,9 @@ export default function CommunicationSequenceModal({
           </div>
 
           {/* Right Column: Parameters & Live SMS Preview */}
-          <div className="md:col-span-7 p-5 overflow-y-auto max-h-[75vh] space-y-4">
+          <div className="md:col-span-7 p-4 sm:p-5 overflow-y-auto space-y-4">
             {/* Customer input fields */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
                   <User className="w-3.5 h-3.5 text-slate-400" /> Customer Name
@@ -242,7 +242,7 @@ export default function CommunicationSequenceModal({
                   type="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full px-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-1.5 text-xs sm:text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>

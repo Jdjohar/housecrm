@@ -214,7 +214,7 @@ export default function CustomersPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => setIsCommModalOpen(true)}
                     className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5"
@@ -241,12 +241,12 @@ export default function CustomersPage() {
                     Contact Information
                   </div>
                   <div className="flex items-center gap-2 text-slate-800 font-medium">
-                    <Phone className="w-3.5 h-3.5 text-blue-600" />
-                    <span>{selectedCustomer.phone}</span>
+                    <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span className="truncate">{selectedCustomer.phone}</span>
                   </div>
                   <div className="flex items-center gap-2 text-slate-800 font-medium">
-                    <Mail className="w-3.5 h-3.5 text-blue-600" />
-                    <span>{selectedCustomer.email}</span>
+                    <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span className="truncate">{selectedCustomer.email}</span>
                   </div>
                 </div>
 
@@ -255,7 +255,7 @@ export default function CustomersPage() {
                     Property Location & Notes
                   </div>
                   <div className="flex items-center gap-2 text-slate-800 font-medium">
-                    <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                    <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                     <span>
                       {selectedCustomer.address}, {selectedCustomer.city} {selectedCustomer.postalCode}
                     </span>
@@ -309,19 +309,19 @@ export default function CustomersPage() {
 
       {/* New Customer Modal */}
       {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 p-4 sm:p-5 shrink-0">
               <h3 className="font-bold text-base text-slate-900">Add New H&H Customer</h3>
               <button
                 onClick={() => setIsNewModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateCustomer} className="space-y-3">
+            <form onSubmit={handleCreateCustomer} className="p-4 sm:p-5 space-y-3.5 overflow-y-auto">
               <div>
                 <label className="text-xs font-semibold text-slate-600 block mb-1">Full Name</label>
                 <input
@@ -334,7 +334,7 @@ export default function CustomersPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Phone (SMS)</label>
                   <input
@@ -359,8 +359,8 @@ export default function CustomersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Street Address</label>
                   <input
                     required
@@ -404,7 +404,7 @@ export default function CustomersPage() {
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsNewModalOpen(false)}

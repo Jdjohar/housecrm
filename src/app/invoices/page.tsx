@@ -452,10 +452,10 @@ export default function InvoicesPage() {
                   </div>
 
                   {/* Actions & Price */}
-                  <div className="flex items-center gap-4 self-end lg:self-center">
-                    <div className="text-right">
-                      <div className="text-xs text-slate-400 font-medium">Invoice Total</div>
-                      <div className="text-lg font-black text-slate-900">${total.toFixed(2)}</div>
+                  <div className="flex flex-col sm:flex-row lg:flex-row items-start sm:items-center justify-between lg:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 w-full lg:w-auto">
+                    <div className="text-left sm:text-right">
+                      <div className="text-[10px] sm:text-xs text-slate-400 font-medium">Invoice Total</div>
+                      <div className="text-base sm:text-lg font-black text-slate-900">${total.toFixed(2)}</div>
                       {paidAmount > 0 && (
                         <div className="text-[11px] font-bold text-emerald-700">
                           Paid: ${paidAmount.toFixed(2)} | Due: ${balanceDue.toFixed(2)}
@@ -463,7 +463,7 @@ export default function InvoicesPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto">
                       {/* PDF Invoice Button */}
                       <button
                         onClick={() => handleOpenPdfInvoice(inv)}
