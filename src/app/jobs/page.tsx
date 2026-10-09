@@ -107,6 +107,13 @@ export default function JobsPage() {
     new Date(Date.now() + 24 * 3600 * 1000).toISOString().split('T')[0]
   );
   const [scheduledTime, setScheduledTime] = useState('10:00 AM');
+  const [bookingHour, setBookingHour] = useState('10');
+  const [bookingMinute, setBookingMinute] = useState('00');
+  const [bookingAmPm, setBookingAmPm] = useState<'AM' | 'PM'>('AM');
+
+  const [editBookingHour, setEditBookingHour] = useState('10');
+  const [editBookingMinute, setEditBookingMinute] = useState('00');
+  const [editBookingAmPm, setEditBookingAmPm] = useState<'AM' | 'PM'>('AM');
   const [durationHours, setDurationHours] = useState(2.5);
   const [assignedCrew, setAssignedCrew] = useState('H&H Lead Crew (Mike & Dave)');
   const [bookingNotes, setBookingNotes] = useState('Customer confirmed. Please check outdoor water connection.');
@@ -116,11 +123,11 @@ export default function JobsPage() {
   // Line items
   const [items, setItems] = useState([
     {
-      service: 'Gutter Cleaning & Downspout Flush',
+      service: 'Roof cleaning, gutters included',
       description: 'Hand removal of debris & downspout flow test',
       quantity: 1,
-      unitPrice: 220,
-      total: 220,
+      unitPrice: 350,
+      total: 350,
     },
   ]);
 
@@ -186,7 +193,8 @@ export default function JobsPage() {
   }, []);
 
   // Standard services
-  const availableServices = settings?.customServices || [
+  const defaultServices = [
+    { name: 'Roof cleaning, gutters included', price: 350, unit: 'per job' },
     { name: 'House soft wash', price: 280, unit: 'per job' },
     { name: 'Gutter cleaning only', price: 220, unit: 'per job' },
     { name: 'Window cleaning', price: 160, unit: 'per job' },
@@ -202,6 +210,78 @@ export default function JobsPage() {
     { name: 'Fence repair', price: 350, unit: 'per job' },
     { name: 'Gate installation', price: 400, unit: 'per job' },
   ];
+
+  const availableServices = settings?.customServices?.length
+    ? [
+        ...(settings.customServices.some((s: any) => s.name?.toLowerCase().includes('roof cleaning'))
+          ? []
+          : [{ name: 'Roof cleaning, gutters included', price: 350, unit: 'per job' }]),
+        ...settings.customServices,
+      ]
+    : defaultServices;
+
+  const parseTimeString = (timeStr: string) => {
+    if (!timeStr) return { hour: '10', minute: '00', ampm: 'AM' as 'AM' | 'PM' };
+    const parts = timeStr.trim().split(' ');
+    const [h, m] = (parts[0] || '10:00').split(':');
+    let hourNum = h ? parseInt(h, 10) : 10;
+    if (isNaN(hourNum) || hourNum < 1 || hourNum > 12) hourNum = 10;
+    let hour = String(hourNum).padStart(2, '0');
+    let minNum = m ? parseInt(m, 10) : 0;
+    if (isNaN(minNum) || minNum < 0 || minNum > 59) minNum = 0;
+    let minute = String(minNum).padStart(2, '0');
+    let ampm = (parts[1]?.toUpperCase() === 'PM' ? 'PM' : 'AM') as 'AM' | 'PM';
+    return { hour, minute, ampm };
+  };
+
+  const isServiceMatch = (itemSvc: string, svcName: string) => {
+    if (!itemSvc || !svcName) return false;
+    const s1 = itemSvc.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const s2 = svcName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return s1 === s2 || s1.includes(s2) || s2.includes(s1);
+  };
+
+  const toggleService = (svc: any) => {
+    const isSelected = items.some((it: any) => isServiceMatch(it.service, svc.name));
+    if (isSelected) {
+      setItems(items.filter((it: any) => !isServiceMatch(it.service, svc.name)));
+    } else {
+      if (items.length === 1 && (!items[0].service || items[0].service === 'Custom Service')) {
+        setItems([
+          {
+            service: svc.name,
+            description: svc.description || `Standard ${svc.name}`,
+            quantity: 1,
+            unitPrice: svc.price || svc.defaultPrice || 200,
+            total: svc.price || svc.defaultPrice || 200,
+          },
+        ]);
+      } else {
+        handleAddItem(svc);
+      }
+    }
+  };
+
+  const toggleEditService = (svc: any) => {
+    const isSelected = editItems.some((it: any) => isServiceMatch(it.service, svc.name));
+    if (isSelected) {
+      setEditItems(editItems.filter((it: any) => !isServiceMatch(it.service, svc.name)));
+    } else {
+      if (editItems.length === 1 && (!editItems[0].service || editItems[0].service === 'Custom Service')) {
+        setEditItems([
+          {
+            service: svc.name,
+            description: svc.description || `Standard ${svc.name}`,
+            quantity: 1,
+            unitPrice: svc.price || svc.defaultPrice || 200,
+            total: svc.price || svc.defaultPrice || 200,
+          },
+        ]);
+      } else {
+        handleAddEditItem(svc);
+      }
+    }
+  };
 
   // Calculations for New Booking
   const calculateSubtotal = () => items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
@@ -375,6 +455,10 @@ export default function JobsPage() {
         ? new Date(job.scheduledDate).toISOString().split('T')[0]
         : new Date().toISOString().split('T')[0]
     );
+    const parsed = parseTimeString(job.scheduledTime || '10:00 AM');
+    setEditBookingHour(parsed.hour);
+    setEditBookingMinute(parsed.minute);
+    setEditBookingAmPm(parsed.ampm);
     setEditScheduledTime(job.scheduledTime || '10:00 AM');
     setEditDurationHours(job.durationHours || 2.5);
     setEditAssignedCrew(job.assignedCrew || 'H&H Lead Crew');
@@ -561,6 +645,19 @@ export default function JobsPage() {
         setJobCosts(0);
         setBookingStatus('scheduled');
         setCustomerNotes('');
+        setScheduledTime('10:00 AM');
+        setBookingHour('10');
+        setBookingMinute('00');
+        setBookingAmPm('AM');
+        setItems([
+          {
+            service: 'Roof cleaning, gutters included',
+            description: 'Hand removal of debris & downspout flow test',
+            quantity: 1,
+            unitPrice: 350,
+            total: 350,
+          },
+        ]);
         fetchJobs();
       } else {
         alert(data.error || 'Failed to create booking');
@@ -1746,13 +1843,46 @@ export default function JobsPage() {
                           <label className="text-[11px] font-semibold text-slate-700 block mb-1">
                             Start Time:
                           </label>
-                          <input
-                            type="text"
-                            value={editScheduledTime}
-                            onChange={(e) => setEditScheduledTime(e.target.value)}
-                            placeholder="e.g. 10:00 AM"
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
-                          />
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <select
+                              value={editBookingHour}
+                              onChange={(e) => {
+                                const h = e.target.value;
+                                setEditBookingHour(h);
+                                setEditScheduledTime(`${h}:${editBookingMinute} ${editBookingAmPm}`);
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-800 text-center"
+                            >
+                              {['01','02','03','04','05','06','07','08','09','10','11','12'].map((hr) => (
+                                <option key={hr} value={hr}>{hr} hr</option>
+                              ))}
+                            </select>
+                            <select
+                              value={editBookingMinute}
+                              onChange={(e) => {
+                                const min = e.target.value;
+                                setEditBookingMinute(min);
+                                setEditScheduledTime(`${editBookingHour}:${min} ${editBookingAmPm}`);
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-800 text-center"
+                            >
+                              {['00','05','10','15','20','25','30','35','40','45','50','55'].map((min) => (
+                                <option key={min} value={min}>{min} min</option>
+                              ))}
+                            </select>
+                            <select
+                              value={editBookingAmPm}
+                              onChange={(e) => {
+                                const p = e.target.value as 'AM' | 'PM';
+                                setEditBookingAmPm(p);
+                                setEditScheduledTime(`${editBookingHour}:${editBookingMinute} ${p}`);
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-800 text-center"
+                            >
+                              <option value="AM">AM</option>
+                              <option value="PM">PM</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
 
@@ -1821,117 +1951,125 @@ export default function JobsPage() {
                   {/* RIGHT COLUMN: SERVICES, FINANCIALS, DEPOSIT & TOTAL */}
                   <div className="space-y-4">
                     {/* Services and Line Items */}
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                          <DollarSign className="w-4 h-4 text-blue-600" />
-                          4. Line Items &amp; Services
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                      {/* SERVICES PILLS CARD (STYLE MATCHING ATTACHED IMAGE) */}
+                      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 space-y-3 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black tracking-wider text-slate-500 uppercase">
+                            SERVICES
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRoofCalcTarget('edit');
+                                setIsRoofCalcOpen(true);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition cursor-pointer"
+                            >
+                              🏠 Roof Matrix
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddEditItem()}
+                              className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
+                            >
+                              + Custom Item
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRoofCalcTarget('edit');
-                              setIsRoofCalcOpen(true);
-                            }}
-                            className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition cursor-pointer"
-                          >
-                            🏠 Roof Calculator
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleAddEditItem()}
-                            className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
-                          >
-                            + Custom Item
-                          </button>
+
+                        {/* Pills Flex Wrap - Selected dark navy blue, unselected white outline, NO price shown */}
+                        <div className="flex flex-wrap gap-2 sm:gap-2.5 pt-1">
+                          {availableServices.map((svc: any, idx: number) => {
+                            const isSelected = editItems.some((it: any) =>
+                              isServiceMatch(it.service, svc.name)
+                            );
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => toggleEditService(svc)}
+                                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition cursor-pointer select-none text-left active:scale-95 ${
+                                  isSelected
+                                    ? 'bg-[#182848] text-white shadow-xs'
+                                    : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                }`}
+                              >
+                                {svc.name}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
-                      {/* Items List */}
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {editItems.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2"
-                          >
-                            <div className="flex items-center justify-between gap-2">
+                      {/* Selected Items Breakdown (Qty & Price) */}
+                      {editItems.length > 0 && (
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Selected Scope &amp; Pricing Breakdown ({editItems.length} item{editItems.length > 1 ? 's' : ''})
+                          </div>
+                          {editItems.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <input
+                                  type="text"
+                                  value={item.service}
+                                  onChange={(e) => handleEditItemChange(idx, 'service', e.target.value)}
+                                  placeholder="Service name"
+                                  className="flex-1 font-bold text-slate-900 border-b border-transparent focus:border-blue-500 outline-none"
+                                />
+                                {editItems.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveEditItem(idx)}
+                                    className="text-slate-300 hover:text-rose-500 cursor-pointer p-0.5"
+                                    title="Remove item"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+
                               <input
                                 type="text"
-                                value={item.service}
-                                onChange={(e) => handleEditItemChange(idx, 'service', e.target.value)}
-                                placeholder="Service name"
-                                className="flex-1 font-bold text-slate-900 border-b border-transparent focus:border-blue-500 outline-none"
+                                value={item.description}
+                                onChange={(e) => handleEditItemChange(idx, 'description', e.target.value)}
+                                placeholder="Description"
+                                className="w-full text-[11px] text-slate-500 border-b border-transparent focus:border-blue-500 outline-none"
                               />
-                              {editItems.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveEditItem(idx)}
-                                  className="text-slate-300 hover:text-rose-500 cursor-pointer p-0.5"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
 
-                            <input
-                              type="text"
-                              value={item.description}
-                              onChange={(e) => handleEditItemChange(idx, 'description', e.target.value)}
-                              placeholder="Description"
-                              className="w-full text-[11px] text-slate-500 border-b border-transparent focus:border-blue-500 outline-none"
-                            />
-
-                            <div className="flex items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-100">
-                              <div className="flex items-center gap-1">
-                                <span>Qty:</span>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={item.quantity}
-                                  onChange={(e) => handleEditItemChange(idx, 'quantity', e.target.value)}
-                                  className="w-12 px-1.5 py-0.5 rounded border border-slate-200 text-center font-bold"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span>Price: $</span>
-                                <input
-                                  type="number"
-                                  value={item.unitPrice}
-                                  onChange={(e) => handleEditItemChange(idx, 'unitPrice', e.target.value)}
-                                  className="w-20 px-1.5 py-0.5 rounded border border-slate-200 text-right font-bold"
-                                />
-                              </div>
-                              <div className="font-black text-slate-900">
-                                ${(Number(item.total) || 0).toFixed(2)}
+                              <div className="flex items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-100">
+                                <div className="flex items-center gap-1">
+                                  <span>Qty:</span>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={item.quantity}
+                                    onChange={(e) => handleEditItemChange(idx, 'quantity', e.target.value)}
+                                    className="w-12 px-1.5 py-0.5 rounded border border-slate-200 text-center font-bold"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span>Price: $</span>
+                                  <input
+                                    type="number"
+                                    value={item.unitPrice}
+                                    onChange={(e) => handleEditItemChange(idx, 'unitPrice', e.target.value)}
+                                    className="w-20 px-1.5 py-0.5 rounded border border-slate-200 text-right font-bold"
+                                  />
+                                </div>
+                                <div className="font-black text-slate-900">
+                                  ${(Number(item.total) || 0).toFixed(2)}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Quick Add Preset Service */}
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                          Add Standard Service:
-                        </label>
-                        <select
-                          onChange={(e) => {
-                            if (!e.target.value) return;
-                            const svc = availableServices.find((s: any) => s.name === e.target.value);
-                            if (svc) handleAddEditItem(svc);
-                            e.target.value = '';
-                          }}
-                          className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium"
-                        >
-                          <option value="">+ Select a preset service to add...</option>
-                          {availableServices.map((svc: any, sIdx: number) => (
-                            <option key={sIdx} value={svc.name}>
-                              {svc.name} (${svc.price})
-                            </option>
                           ))}
-                        </select>
-                      </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Financial Calculations & Deposit */}
@@ -2275,18 +2413,48 @@ export default function JobsPage() {
                         </div>
                         <div>
                           <label className="text-[11px] font-semibold text-slate-600 block mb-1">
-                            Arrival Window / Time:
+                            Arrival Time:
                           </label>
-                          <select
-                            value={scheduledTime}
-                            onChange={(e) => setScheduledTime(e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
-                          >
-                            <option value="08:00 AM">08:00 AM (Early Slot)</option>
-                            <option value="10:00 AM">10:00 AM (Morning Slot)</option>
-                            <option value="01:00 PM">01:00 PM (Afternoon Slot)</option>
-                            <option value="03:30 PM">03:30 PM (Late Afternoon)</option>
-                          </select>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <select
+                              value={bookingHour}
+                              onChange={(e) => {
+                                const h = e.target.value;
+                                setBookingHour(h);
+                                setScheduledTime(`${h}:${bookingMinute} ${bookingAmPm}`);
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-800 text-center"
+                            >
+                              {['01','02','03','04','05','06','07','08','09','10','11','12'].map((hr) => (
+                                <option key={hr} value={hr}>{hr} hr</option>
+                              ))}
+                            </select>
+                            <select
+                              value={bookingMinute}
+                              onChange={(e) => {
+                                const min = e.target.value;
+                                setBookingMinute(min);
+                                setScheduledTime(`${bookingHour}:${min} ${bookingAmPm}`);
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-800 text-center"
+                            >
+                              {['00','05','10','15','20','25','30','35','40','45','50','55'].map((min) => (
+                                <option key={min} value={min}>{min} min</option>
+                              ))}
+                            </select>
+                            <select
+                              value={bookingAmPm}
+                              onChange={(e) => {
+                                const p = e.target.value as 'AM' | 'PM';
+                                setBookingAmPm(p);
+                                setScheduledTime(`${bookingHour}:${bookingMinute} ${p}`);
+                              }}
+                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-xs text-slate-800 text-center"
+                            >
+                              <option value="AM">AM</option>
+                              <option value="PM">PM</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
 
@@ -2359,117 +2527,125 @@ export default function JobsPage() {
                   {/* RIGHT COLUMN: SERVICES, FINANCIALS, DEPOSIT & TOTAL */}
                   <div className="space-y-4">
                     {/* 4. LINE ITEMS & SERVICES */}
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                          <DollarSign className="w-4 h-4 text-blue-600" />
-                          4. Services &amp; Line Items
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRoofCalcTarget('new');
-                              setIsRoofCalcOpen(true);
-                            }}
-                            className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition cursor-pointer"
-                          >
-                            🏠 Roof Calculator
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleAddItem()}
-                            className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
-                          >
-                            + Custom
-                          </button>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                      {/* SERVICES PILLS CARD (STYLE MATCHING ATTACHED IMAGE) */}
+                      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 space-y-3 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black tracking-wider text-slate-500 uppercase">
+                            SERVICES
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRoofCalcTarget('new');
+                                setIsRoofCalcOpen(true);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition cursor-pointer"
+                            >
+                              🏠 Roof Matrix
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAddItem()}
+                              className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
+                            >
+                              + Custom Service
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Pills Flex Wrap - Selected dark navy blue, unselected white with outline, NO price shown */}
+                        <div className="flex flex-wrap gap-2 sm:gap-2.5 pt-1">
+                          {availableServices.map((svc: any, idx: number) => {
+                            const isSelected = items.some((it: any) =>
+                              isServiceMatch(it.service, svc.name)
+                            );
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => toggleService(svc)}
+                                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition cursor-pointer select-none text-left active:scale-95 ${
+                                  isSelected
+                                    ? 'bg-[#182848] text-white shadow-xs'
+                                    : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                }`}
+                              >
+                                {svc.name}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
-                      {/* Items List */}
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {items.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2"
-                          >
-                            <div className="flex items-center justify-between gap-2">
+                      {/* Selected Items Breakdown (Qty & Price) */}
+                      {items.length > 0 && (
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Selected Scope &amp; Pricing Breakdown ({items.length} item{items.length > 1 ? 's' : ''})
+                          </div>
+                          {items.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <input
+                                  type="text"
+                                  value={item.service}
+                                  onChange={(e) => handleItemChange(idx, 'service', e.target.value)}
+                                  placeholder="Service name"
+                                  className="flex-1 font-bold text-slate-900 border-b border-transparent focus:border-blue-500 outline-none"
+                                />
+                                {items.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveItem(idx)}
+                                    className="text-slate-300 hover:text-rose-500 cursor-pointer p-0.5"
+                                    title="Remove item"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+
                               <input
                                 type="text"
-                                value={item.service}
-                                onChange={(e) => handleItemChange(idx, 'service', e.target.value)}
-                                placeholder="Service name"
-                                className="flex-1 font-bold text-slate-900 border-b border-transparent focus:border-blue-500 outline-none"
+                                value={item.description}
+                                onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
+                                placeholder="Description"
+                                className="w-full text-[11px] text-slate-500 border-b border-transparent focus:border-blue-500 outline-none"
                               />
-                              {items.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveItem(idx)}
-                                  className="text-slate-300 hover:text-rose-500 cursor-pointer p-0.5"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
 
-                            <input
-                              type="text"
-                              value={item.description}
-                              onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
-                              placeholder="Description"
-                              className="w-full text-[11px] text-slate-500 border-b border-transparent focus:border-blue-500 outline-none"
-                            />
-
-                            <div className="flex items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-100">
-                              <div className="flex items-center gap-1">
-                                <span>Qty:</span>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={item.quantity}
-                                  onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                                  className="w-12 px-1.5 py-0.5 rounded border border-slate-200 text-center font-bold"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span>Price: $</span>
-                                <input
-                                  type="number"
-                                  value={item.unitPrice}
-                                  onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
-                                  className="w-20 px-1.5 py-0.5 rounded border border-slate-200 text-right font-bold"
-                                />
-                              </div>
-                              <div className="font-black text-slate-900">
-                                ${(Number(item.total) || 0).toFixed(2)}
+                              <div className="flex items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-100">
+                                <div className="flex items-center gap-1">
+                                  <span>Qty:</span>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={item.quantity}
+                                    onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                                    className="w-12 px-1.5 py-0.5 rounded border border-slate-200 text-center font-bold"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span>Price: $</span>
+                                  <input
+                                    type="number"
+                                    value={item.unitPrice}
+                                    onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
+                                    className="w-20 px-1.5 py-0.5 rounded border border-slate-200 text-right font-bold"
+                                  />
+                                </div>
+                                <div className="font-black text-slate-900">
+                                  ${(Number(item.total) || 0).toFixed(2)}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Quick Add Presets */}
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                          Quick Add Standard Service:
-                        </label>
-                        <select
-                          onChange={(e) => {
-                            if (!e.target.value) return;
-                            const svc = availableServices.find((s: any) => s.name === e.target.value);
-                            if (svc) handleAddItem(svc);
-                            e.target.value = '';
-                          }}
-                          className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium"
-                        >
-                          <option value="">+ Select a preset service to add...</option>
-                          {availableServices.map((svc: any, sIdx: number) => (
-                            <option key={sIdx} value={svc.name}>
-                              {svc.name} (${svc.price})
-                            </option>
                           ))}
-                        </select>
-                      </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* 5. FINANCIALS, GST & DEPOSIT */}

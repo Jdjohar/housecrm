@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/mongodb';
 import Invoice from '@/models/Invoice';
 import Customer from '@/models/Customer';
 import { dispatchAutomatedMessage } from '@/lib/automationDispatcher';
+import { getNextInvoiceNumber } from '@/lib/sequences';
 
 export async function GET() {
   try {
@@ -24,8 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Customer not found' }, { status: 404 });
     }
 
-    const count = await Invoice.countDocuments();
-    const invoiceNumber = body.invoiceNumber || `INV-2026-${String(count + 301)}`;
+    const invoiceNumber = await getNextInvoiceNumber(body.invoiceNumber);
 
     const total = Number(body.total) || 0;
     const initialPaymentAmount = Number(body.initialPaymentAmount) || 0;

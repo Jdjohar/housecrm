@@ -4,6 +4,7 @@ import Estimate from '@/models/Estimate';
 import Job from '@/models/Job';
 import Customer from '@/models/Customer';
 import { dispatchAutomatedMessage } from '@/lib/automationDispatcher';
+import { getNextJobNumber } from '@/lib/sequences';
 import mongoose from 'mongoose';
 
 export async function GET(
@@ -111,8 +112,7 @@ export async function PUT(
       await estimate.save();
 
       const customer = await Customer.findById(estimate.customerId);
-      const jobCount = await Job.countDocuments();
-      const jobNumber = `JOB-${String(jobCount + 4001)}`;
+      const jobNumber = await getNextJobNumber();
 
       const newJob = await Job.create({
         customerId: estimate.customerId,

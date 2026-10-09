@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/mongodb';
 import Job from '@/models/Job';
 import Customer from '@/models/Customer';
 import { dispatchAutomatedMessage } from '@/lib/automationDispatcher';
+import { getNextJobNumber } from '@/lib/sequences';
 
 export async function GET(req: NextRequest) {
   try {
@@ -58,8 +59,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Customer information is required' }, { status: 400 });
     }
 
-    const jobCount = await Job.countDocuments();
-    const jobNumber = body.jobNumber || `JOB-${String(jobCount + 4001)}`;
+    const jobNumber = await getNextJobNumber(body.jobNumber);
 
     const servicesList =
       body.services?.length > 0

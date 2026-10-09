@@ -4,6 +4,7 @@ import Job from '@/models/Job';
 import Invoice from '@/models/Invoice';
 import Customer from '@/models/Customer';
 import { dispatchAutomatedMessage } from '@/lib/automationDispatcher';
+import { getNextInvoiceNumber } from '@/lib/sequences';
 
 export async function GET(
   req: NextRequest,
@@ -129,8 +130,7 @@ export async function PUT(
       // Optionally auto-generate invoice if requested
       let createdInvoice: any = null;
       if (body.createInvoiceNow) {
-        const invCount = await Invoice.countDocuments();
-        const invoiceNumber = `INV-2026-${String(invCount + 301)}`;
+        const invoiceNumber = await getNextInvoiceNumber();
         const subtotal = Number(job.subtotal) || Number(job.totalAmount) || 0;
         const tax = job.includeGst === false ? 0 : (Number(job.tax) || 0);
         const includeGst = job.includeGst !== false && tax > 0;

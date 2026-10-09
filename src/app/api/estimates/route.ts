@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/mongodb';
 import Estimate from '@/models/Estimate';
 import Customer from '@/models/Customer';
 import { dispatchAutomatedMessage } from '@/lib/automationDispatcher';
+import { getNextEstimateNumber } from '@/lib/sequences';
 
 export async function GET() {
   try {
@@ -24,8 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Customer not found' }, { status: 404 });
     }
 
-    const count = await Estimate.countDocuments();
-    const estimateNumber = body.estimateNumber || `EST-2026-${String(count + 101).padStart(3, '0')}`;
+    const estimateNumber = await getNextEstimateNumber(body.estimateNumber);
 
     const newEstimate = await Estimate.create({
       ...body,
