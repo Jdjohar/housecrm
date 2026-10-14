@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ShieldCheck,
   CheckCircle2,
+  AlertCircle,
   X,
 } from 'lucide-react';
 import CommunicationSequenceModal from '@/components/CommunicationSequenceModal';
@@ -31,6 +32,7 @@ export default function CustomersPage() {
   const [customerDetails, setCustomerDetails] = useState<any | null>(null);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isCommModalOpen, setIsCommModalOpen] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // New Customer form
   const [formData, setFormData] = useState({
@@ -81,6 +83,7 @@ export default function CustomersPage() {
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
+    setModalError(null);
     try {
       const tagsArray = formData.tags
         .split(',')
@@ -98,10 +101,25 @@ export default function CustomersPage() {
       const data = await res.json();
       if (data.success) {
         setIsNewModalOpen(false);
+        setModalError(null);
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          address: '',
+          city: 'Vancouver',
+          propertyType: 'Residential',
+          notes: '',
+          tags: 'Gutter Cleaning, Spring',
+        });
         fetchCustomers();
+      } else {
+        setModalError(data.error || 'Failed to create customer');
+        alert(data.error || 'Failed to create customer');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setModalError(err.message || 'Error creating customer');
     }
   };
 
@@ -322,6 +340,13 @@ export default function CustomersPage() {
             </div>
 
             <form onSubmit={handleCreateCustomer} className="p-4 sm:p-5 space-y-3.5 overflow-y-auto">
+              {modalError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
               <div>
                 <label className="text-xs font-semibold text-slate-600 block mb-1">Full Name</label>
                 <input
@@ -345,6 +370,22 @@ export default function CustomersPage() {
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500"
                   />
+                  {formData.phone.replace(/\D/g, '').length >= 7 &&
+                    customers.some(
+                      (c) =>
+                        (c.phone || '').replace(/\D/g, '').slice(-10) ===
+                        formData.phone.replace(/\D/g, '').slice(-10)
+                    ) && (
+                      <p className="text-[11px] text-amber-600 font-semibold mt-1">
+                        ⚠️ Existing customer already has this phone: {
+                          customers.find(
+                            (c) =>
+                              (c.phone || '').replace(/\D/g, '').slice(-10) ===
+                              formData.phone.replace(/\D/g, '').slice(-10)
+                          )?.name
+                        }
+                      </p>
+                    )}
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Email</label>

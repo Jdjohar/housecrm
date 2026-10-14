@@ -51,7 +51,6 @@ export default function InvoicesPage() {
   // New Invoice Modal state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [serviceSearchQuery, setServiceSearchQuery] = useState('');
   const [includeGst, setIncludeGst] = useState(true);
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString().split('T')[0]
@@ -61,11 +60,11 @@ export default function InvoicesPage() {
   );
   const [items, setItems] = useState([
     {
-      service: 'Vinyl Siding Soft Wash (House Wash)',
-      description: 'Exterior house wash and sanitization',
+      service: 'Roof cleaning, gutters included',
+      description: 'Hand removal of debris & downspout flow test',
       quantity: 1,
-      unitPrice: 280,
-      total: 280,
+      unitPrice: 350,
+      total: 350,
     },
   ]);
 
@@ -105,7 +104,63 @@ export default function InvoicesPage() {
     fetchInvoices();
   }, []);
 
-  const calculateSubtotal = () => items.reduce((sum, item) => sum + (item.total || 0), 0);
+  // Standard services
+  const defaultServices = [
+    { name: 'Roof cleaning, gutters included', price: 350, unit: 'per job' },
+    { name: 'House soft wash', price: 280, unit: 'per job' },
+    { name: 'Gutter cleaning only', price: 220, unit: 'per job' },
+    { name: 'Window cleaning', price: 160, unit: 'per job' },
+    { name: 'Driveway and concrete', price: 180, unit: 'per job' },
+    { name: 'Deck and patio', price: 200, unit: 'per job' },
+    { name: 'Siding wash', price: 250, unit: 'per job' },
+    { name: 'Commercial wash', price: 450, unit: 'per job' },
+    { name: 'Lawn mowing', price: 85, unit: 'per job' },
+    { name: 'Hedge and bush trimming', price: 140, unit: 'per job' },
+    { name: 'Tree trimming', price: 250, unit: 'per job' },
+    { name: 'Yard cleanup', price: 190, unit: 'per job' },
+    { name: 'Fence installation', price: 1200, unit: 'per job' },
+    { name: 'Fence repair', price: 350, unit: 'per job' },
+    { name: 'Gate installation', price: 400, unit: 'per job' },
+  ];
+
+  const availableServices = settings?.customServices?.length
+    ? [
+        ...(settings.customServices.some((s: any) => s.name?.toLowerCase().includes('roof cleaning'))
+          ? []
+          : [{ name: 'Roof cleaning, gutters included', price: 350, unit: 'per job' }]),
+        ...settings.customServices,
+      ]
+    : defaultServices;
+
+  const isServiceMatch = (itemSvc: string, svcName: string) => {
+    if (!itemSvc || !svcName) return false;
+    const s1 = itemSvc.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const s2 = svcName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return s1 === s2 || s1.includes(s2) || s2.includes(s1);
+  };
+
+  const toggleService = (svc: any) => {
+    const isSelected = items.some((it: any) => isServiceMatch(it.service, svc.name));
+    if (isSelected) {
+      setItems(items.filter((it: any) => !isServiceMatch(it.service, svc.name)));
+    } else {
+      if (items.length === 1 && (!items[0].service || items[0].service === 'Custom Service' || items[0].service === 'Custom Maintenance Service')) {
+        setItems([
+          {
+            service: svc.name,
+            description: svc.description || `Standard ${svc.name}`,
+            quantity: 1,
+            unitPrice: svc.price || svc.defaultPrice || 200,
+            total: svc.price || svc.defaultPrice || 200,
+          },
+        ]);
+      } else {
+        handleAddItem(svc);
+      }
+    }
+  };
+
+  const calculateSubtotal = () => items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
   const calculateTax = () => {
     if (!includeGst) return 0;
     const rate = settings?.gstRate !== undefined ? settings.gstRate / 100 : 0.05;
@@ -115,8 +170,8 @@ export default function InvoicesPage() {
 
   const handleAddItem = (presetSvc?: any) => {
     if (presetSvc) {
-      setItems([
-        ...items,
+      setItems((prev) => [
+        ...prev,
         {
           service: presetSvc.name,
           description: presetSvc.description || `Standard ${presetSvc.name}`,
@@ -126,10 +181,10 @@ export default function InvoicesPage() {
         },
       ]);
     } else {
-      setItems([
-        ...items,
+      setItems((prev) => [
+        ...prev,
         {
-          service: 'Custom Maintenance Service',
+          service: 'Custom Service',
           description: 'Specialized property cleaning',
           quantity: 1,
           unitPrice: 150,
@@ -219,10 +274,22 @@ export default function InvoicesPage() {
         setIsNewModalOpen(false);
         setActionNotice('Invoice created & SMS notification #6 dispatched to client!');
         setTimeout(() => setActionNotice(null), 3500);
+        setItems([
+          {
+            service: 'Roof cleaning, gutters included',
+            description: 'Hand removal of debris & downspout flow test',
+            quantity: 1,
+            unitPrice: 350,
+            total: 350,
+          },
+        ]);
         fetchInvoices();
+      } else {
+        alert(data.error || 'Failed to create invoice');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err.message || 'Error creating invoice');
     }
   };
 
@@ -315,24 +382,6 @@ export default function InvoicesPage() {
     });
     setIsPdfModalOpen(true);
   };
-
-  // Available services from settings
-  const availableServices = settings?.customServices || [
-    { name: 'House soft wash', price: 280, unit: 'per job' },
-    { name: 'Gutter cleaning only', price: 220, unit: 'per job' },
-    { name: 'Window cleaning', price: 160, unit: 'per job' },
-    { name: 'Driveway and concrete', price: 180, unit: 'per job' },
-    { name: 'Deck and patio', price: 200, unit: 'per job' },
-    { name: 'Siding wash', price: 250, unit: 'per job' },
-    { name: 'Commercial wash', price: 450, unit: 'per job' },
-    { name: 'Lawn mowing', price: 85, unit: 'per job' },
-    { name: 'Hedge and bush trimming', price: 140, unit: 'per job' },
-    { name: 'Tree trimming', price: 250, unit: 'per job' },
-    { name: 'Yard cleanup', price: 190, unit: 'per job' },
-    { name: 'Fence installation', price: 1200, unit: 'per job' },
-    { name: 'Fence repair', price: 350, unit: 'per job' },
-    { name: 'Gate installation', price: 400, unit: 'per job' },
-  ];
 
   return (
     <div className="space-y-6">
@@ -527,7 +576,7 @@ export default function InvoicesPage() {
                   Create Direct Invoice
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Select customer, pick services with live search or Roof Matrix, and dispatch SMS.
+                  Select customer, choose services &amp; scope breakdown, and dispatch invoice.
                 </p>
               </div>
               <button
@@ -582,160 +631,125 @@ export default function InvoicesPage() {
                   </div>
                 </div>
 
-                {/* Service Line Items Controls & Searchable Standard Services */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Wrench className="w-3.5 h-3.5 text-blue-600" />
-                      Service Line Items
-                    </label>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => setIsRoofCalcOpen(true)}
-                        className="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 flex items-center gap-1.5 transition cursor-pointer"
-                      >
-                        <Grid3X3 className="w-3.5 h-3.5" /> + Roof Matrix Calc
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleAddItem()}
-                        className="text-xs text-slate-700 font-bold hover:bg-slate-100 flex items-center gap-1 border border-slate-200 px-2.5 py-1 rounded-lg bg-white cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> + Custom Blank Item
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Standard Services List with Live Search Bar */}
-                  <div className="p-3 bg-gradient-to-br from-slate-50 to-blue-50/40 rounded-2xl border border-blue-100 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                        Standard Services List (Click to Add):
+                {/* 4. LINE ITEMS & SERVICES */}
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                  {/* SERVICES PILLS CARD (STYLE MATCHING BOOKING PAGE) */}
+                  <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black tracking-wider text-slate-500 uppercase">
+                        SERVICES
                       </span>
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        {availableServices.length} standard services configured
-                      </span>
-                    </div>
-
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Search standard service (e.g. House wash, Gutter, Window, Siding, Fence...)"
-                        value={serviceSearchQuery}
-                        onChange={(e) => setServiceSearchQuery(e.target.value)}
-                        className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400"
-                      />
-                      <div className="absolute left-2.5 top-2 text-slate-400 pointer-events-none text-xs">
-                        🔍
-                      </div>
-                      {serviceSearchQuery && (
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => setServiceSearchQuery('')}
-                          className="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+                          onClick={() => {
+                            setIsRoofCalcOpen(true);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition cursor-pointer"
                         >
-                          ✕
+                          🏠 Roof Matrix
                         </button>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => handleAddItem()}
+                          className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
+                        >
+                          + Custom Service
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
-                      {availableServices
-                        .filter((svc: any) =>
-                          svc.name.toLowerCase().includes(serviceSearchQuery.toLowerCase())
-                        )
-                        .map((svc: any, idx: number) => {
-                          const price = svc.price || svc.defaultPrice || 200;
-                          const unit = svc.unit || 'job';
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => handleAddItem(svc)}
-                              className="group px-2.5 py-1 rounded-lg bg-white hover:bg-blue-600 border border-slate-200 hover:border-blue-600 text-slate-700 hover:text-white transition-all text-left flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                            >
-                              <span className="text-xs font-semibold">{svc.name}</span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 group-hover:bg-blue-500 text-blue-700 group-hover:text-white border border-blue-100 group-hover:border-blue-400">
-                                ${price}
-                              </span>
-                              <span className="text-[10px] text-slate-400 group-hover:text-blue-100 font-normal">
-                                /{unit}
-                              </span>
-                              <Plus className="w-3 h-3 text-blue-500 group-hover:text-white" />
-                            </button>
-                          );
-                        })}
-                      {availableServices.filter((svc: any) =>
-                        svc.name.toLowerCase().includes(serviceSearchQuery.toLowerCase())
-                      ).length === 0 && (
-                        <div className="text-xs text-slate-400 py-1 italic">
-                          No service matching &quot;{serviceSearchQuery}&quot; found. You can add a custom item above.
-                        </div>
-                      )}
+                    {/* Pills Flex Wrap - Selected dark navy blue, unselected white with outline */}
+                    <div className="flex flex-wrap gap-2 sm:gap-2.5 pt-1">
+                      {availableServices.map((svc: any, idx: number) => {
+                        const isSelected = items.some((it: any) =>
+                          isServiceMatch(it.service, svc.name)
+                        );
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => toggleService(svc)}
+                            className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition cursor-pointer select-none text-left active:scale-95 ${
+                              isSelected
+                                ? 'bg-[#182848] text-white shadow-xs'
+                                : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            {svc.name}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Line Items List */}
-                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    {items.map((item, idx) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
-                        <div className="grid grid-cols-12 gap-2 items-center">
-                          <div className="col-span-6">
+                  {/* Selected Items Breakdown (Qty & Price) */}
+                  {items.length > 0 && (
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Selected Scope &amp; Pricing Breakdown ({items.length} item{items.length > 1 ? 's' : ''})
+                      </div>
+                      {items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2"
+                        >
+                          <div className="flex items-center justify-between gap-2">
                             <input
                               type="text"
                               value={item.service}
                               onChange={(e) => handleItemChange(idx, 'service', e.target.value)}
                               placeholder="Service name"
-                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold"
+                              className="flex-1 font-bold text-slate-900 border-b border-transparent focus:border-blue-500 outline-none"
                             />
+                            {items.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(idx)}
+                                className="text-slate-300 hover:text-rose-500 cursor-pointer p-0.5"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
-                          <div className="col-span-2">
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                              placeholder="Qty"
-                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white"
-                            />
-                          </div>
-                          <div className="col-span-3">
-                            <input
-                              type="number"
-                              min="0"
-                              value={item.unitPrice}
-                              onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
-                              placeholder="Price ($)"
-                              className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white"
-                            />
-                          </div>
-                          <div className="col-span-1 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveItem(idx)}
-                              className="text-slate-400 hover:text-rose-500 cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
 
-                        <div>
                           <input
                             type="text"
                             value={item.description}
                             onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
-                            placeholder="Service details / scope description..."
-                            className="w-full px-2 py-1 rounded-lg border border-slate-200 bg-white text-[11px] text-slate-600"
+                            placeholder="Description"
+                            className="w-full text-[11px] text-slate-500 border-b border-transparent focus:border-blue-500 outline-none"
                           />
+
+                          <div className="flex items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-100">
+                            <div className="flex items-center gap-1">
+                              <span>Qty:</span>
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                                className="w-12 px-1.5 py-0.5 rounded border border-slate-200 text-center font-bold"
+                              />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span>Price: $</span>
+                              <input
+                                type="number"
+                                value={item.unitPrice}
+                                onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
+                                className="w-20 px-1.5 py-0.5 rounded border border-slate-200 text-right font-bold"
+                              />
+                            </div>
+                            <div className="font-black text-slate-900">
+                              ${(Number(item.total) || 0).toFixed(2)}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Totals */}

@@ -68,9 +68,11 @@ export default function Header({ onOpenMobileMenu }: HeaderProps) {
 
           {/* Brand Mark on Mobile */}
           <div className="lg:hidden flex items-center gap-1.5 shrink-0">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 via-indigo-600 to-amber-400 flex items-center justify-center font-black text-white text-xs shadow-xs">
-              H&H
-            </div>
+            <img
+              src="/logo.jpg"
+              alt="H&H Logo"
+              className="w-8 h-8 rounded-lg object-cover shadow-xs shrink-0"
+            />
           </div>
 
           {/* System Status Pill */}

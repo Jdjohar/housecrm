@@ -125,9 +125,11 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       {/* Brand Header */}
       <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-amber-400 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-blue-500/20 shrink-0">
-            H&H
-          </div>
+          <img
+            src="/logo.jpg"
+            alt="H&H Logo"
+            className="w-10 h-10 rounded-xl object-cover shadow-lg shadow-blue-500/20 shrink-0"
+          />
           <div>
             <div className="font-bold text-white tracking-tight text-sm leading-tight flex items-center gap-1.5">
               H&H House CRM

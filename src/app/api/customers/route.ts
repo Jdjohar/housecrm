@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Customer from '@/models/Customer';
+import { findExistingCustomer } from '@/lib/customerDuplicates';
 
 export async function GET(req: NextRequest) {
   try {
@@ -41,6 +42,31 @@ export async function POST(req: NextRequest) {
   try {
     await connectToDatabase();
     const body = await req.json();
+
+    if (!body.name || !body.phone) {
+      return NextResponse.json(
+        { success: false, error: 'Customer name and phone number are required' },
+        { status: 400 }
+      );
+    }
+
+    // Check for duplicate customer
+    const existing = await findExistingCustomer({
+      phone: body.phone,
+      email: body.email,
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Customer already exists: "${existing.name}" (${existing.phone}). Duplicate customer is not allowed.`,
+          data: existing,
+        },
+        { status: 409 }
+      );
+    }
+
     const newCustomer = await Customer.create(body);
     return NextResponse.json({ success: true, data: newCustomer }, { status: 201 });
   } catch (error: any) {

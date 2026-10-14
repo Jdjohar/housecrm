@@ -84,10 +84,11 @@ export default function EstimatePdfDocument({
       <div className="flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-6">
         {/* Left: Brand Logo & Mascot */}
         <div className="flex items-center space-x-3.5">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#0f2744] via-[#1a365d] to-[#2563eb] text-white flex flex-col items-center justify-center font-black shadow-md border border-slate-700">
-            <span className="text-xl tracking-tighter leading-none">H&H</span>
-            <span className="text-[7px] tracking-widest uppercase font-semibold text-blue-200">PROS</span>
-          </div>
+          <img
+            src="/logo.jpg"
+            alt="H&H House Maintenance Logo"
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-sm border border-slate-200 shrink-0"
+          />
           <div>
             <div className="text-lg font-black tracking-tight text-[#0f2744] uppercase leading-tight">
               H & H HOUSE MAINTENANCE LTD.

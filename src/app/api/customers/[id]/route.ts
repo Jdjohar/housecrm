@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Customer from '@/models/Customer';
+import { findExistingCustomer } from '@/lib/customerDuplicates';
 import Estimate from '@/models/Estimate';
 import Job from '@/models/Job';
 import Invoice from '@/models/Invoice';
@@ -57,6 +58,22 @@ export async function PUT(
     await connectToDatabase();
     const { id } = await params;
     const body = await req.json();
+    if (body.phone || body.email) {
+      const existing = await findExistingCustomer({
+        phone: body.phone,
+        email: body.email,
+        excludeCustomerId: id,
+      });
+      if (existing) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Another customer already exists with this phone or email: "${existing.name}" (${existing.phone}). Duplicate not allowed.`,
+          },
+          { status: 409 }
+        );
+      }
+    }
 
     const updated = await Customer.findByIdAndUpdate(id, body, { new: true }).lean();
     return NextResponse.json({ success: true, data: updated });

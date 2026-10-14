@@ -101,9 +101,11 @@ export default function ClientInvoicePortal() {
         {/* Header */}
         <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-amber-400 flex items-center justify-center font-black text-white text-xl shadow-lg">
-              H&H
-            </div>
+            <img
+              src="/logo.jpg"
+              alt="H&H House Maintenance Logo"
+              className="w-14 h-14 rounded-2xl object-cover shadow-lg border border-white/20 shrink-0"
+            />
             <div>
               <h1 className="font-bold text-lg text-white">H&H House Maintenance</h1>
               <a

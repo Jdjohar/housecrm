@@ -2330,6 +2330,22 @@ export default function JobsPage() {
                                 onChange={(e) => setNewCustPhone(e.target.value)}
                                 className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-medium"
                               />
+                              {newCustPhone.replace(/\D/g, '').length >= 7 &&
+                                customers.some(
+                                  (c) =>
+                                    (c.phone || '').replace(/\D/g, '').slice(-10) ===
+                                    newCustPhone.replace(/\D/g, '').slice(-10)
+                                ) && (
+                                  <p className="text-[10px] text-blue-700 bg-blue-50 p-1 rounded-md mt-1 border border-blue-200 leading-tight">
+                                    ℹ️ Matches: <strong>{
+                                      customers.find(
+                                        (c) =>
+                                          (c.phone || '').replace(/\D/g, '').slice(-10) ===
+                                          newCustPhone.replace(/\D/g, '').slice(-10)
+                                      )?.name
+                                    }</strong> (will link to existing profile, no duplicate).
+                                  </p>
+                                )}
                             </div>
                           </div>
 

@@ -4,6 +4,7 @@ import Job from '@/models/Job';
 import Customer from '@/models/Customer';
 import { dispatchAutomatedMessage } from '@/lib/automationDispatcher';
 import { getNextJobNumber } from '@/lib/sequences';
+import { findExistingCustomer } from '@/lib/customerDuplicates';
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,16 +44,33 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      customer = await Customer.create({
-        name: body.newCustomer.name,
+      // Check if customer already exists by phone or email
+      const existing = await findExistingCustomer({
         phone: body.newCustomer.phone,
-        email: body.newCustomer.email || `${body.newCustomer.name.toLowerCase().replace(/\s+/g, '')}@example.com`,
-        address: body.newCustomer.address || 'Lower Mainland',
-        city: body.newCustomer.city || 'Vancouver',
-        postalCode: body.newCustomer.postalCode || 'BC',
-        propertyType: body.newCustomer.propertyType || 'Residential',
-        notes: body.newCustomer.notes || 'Created during booking',
+        email: body.newCustomer.email,
       });
+
+      if (existing) {
+        customer = existing;
+        if (body.newCustomer.address && (!existing.address || existing.address === 'Lower Mainland')) {
+          existing.address = body.newCustomer.address;
+        }
+        if (body.newCustomer.city && (!existing.city || existing.city === 'Vancouver')) {
+          existing.city = body.newCustomer.city;
+        }
+        await existing.save();
+      } else {
+        customer = await Customer.create({
+          name: body.newCustomer.name,
+          phone: body.newCustomer.phone,
+          email: body.newCustomer.email || `${body.newCustomer.name.toLowerCase().replace(/\s+/g, '')}@example.com`,
+          address: body.newCustomer.address || 'Lower Mainland',
+          city: body.newCustomer.city || 'Vancouver',
+          postalCode: body.newCustomer.postalCode || 'BC',
+          propertyType: body.newCustomer.propertyType || 'Residential',
+          notes: body.newCustomer.notes || 'Created during booking',
+        });
+      }
     }
 
     if (!customer) {
