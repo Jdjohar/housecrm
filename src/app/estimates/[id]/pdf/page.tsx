@@ -54,29 +54,29 @@ export default function EstimateStandalonePdfPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-200 py-6 px-4 print:bg-white print:p-0 print:m-0">
+    <div className="min-h-screen bg-slate-200 py-3 sm:py-6 px-2 sm:px-4 print:bg-white print:p-0 print:m-0 print:min-h-0">
       {/* Top Floating Controls (Hidden during print / save to PDF) */}
-      <div className="max-w-[850px] mx-auto mb-4 bg-slate-900 text-white p-3.5 px-5 rounded-2xl shadow-xl flex items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center space-x-3">
+      <div className="max-w-[850px] mx-auto mb-4 bg-slate-900 text-white p-3 sm:p-3.5 px-3.5 sm:px-5 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 print:hidden">
+        <div className="flex items-center space-x-3 min-w-0">
           <button
             onClick={() => router.push('/estimates')}
-            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition cursor-pointer"
+            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition cursor-pointer shrink-0"
             title="Back to Estimates"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <div className="text-xs font-bold text-white flex items-center gap-1.5">
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-white flex items-center gap-1.5 truncate">
               <span>Estimate PDF Export</span>
               <span className="font-mono text-blue-400">({estimate.estimateNumber})</span>
             </div>
-            <div className="text-[11px] text-slate-400">
+            <div className="text-[11px] text-slate-400 truncate">
               Customer: {estimate.customerName}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap justify-end w-full sm:w-auto shrink-0">
           <a
             href={`/portal/estimate/${estimate._id}`}
             target="_blank"
@@ -99,8 +99,7 @@ export default function EstimateStandalonePdfPage() {
 
       {/* Full Sheet Document Container */}
       <div
-        id="printable-estimate-doc"
-        className="max-w-[850px] mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden print:shadow-none print:rounded-none print:max-w-none print:w-full print:m-0 print:p-0"
+        className="max-w-[850px] mx-auto bg-white shadow-2xl rounded-2xl overflow-x-auto print:overflow-visible print:shadow-none print:rounded-none print:max-w-none print:w-full print:m-0 print:p-0"
       >
         <EstimatePdfDocument estimate={estimate} customer={estimate.customer} />
       </div>

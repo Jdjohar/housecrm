@@ -315,7 +315,8 @@ export default function EstimatesPage() {
     : catalogServices;
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6 print:hidden">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -500,61 +501,7 @@ export default function EstimatesPage() {
         </div>
       </div>
 
-      {/* PDF Export & Preview Modal */}
-      {isPdfModalOpen && selectedPdfEstimate && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-6 space-y-4 my-6 animate-in fade-in zoom-in-95">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3 print:hidden">
-              <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <div>
-                  <h3 className="font-bold text-base text-slate-900">
-                    Estimate PDF Document ({selectedPdfEstimate.estimateNumber})
-                  </h3>
-                  <p className="text-[11px] text-slate-400">
-                    Client: {selectedPdfEstimate.customerName}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <a
-                  href={`/estimates/${selectedPdfEstimate._id}/pdf`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open Full PDF Tab</span>
-                </a>
 
-                <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Print / Save as PDF</span>
-                </button>
-
-                <button
-                  onClick={() => setIsPdfModalOpen(false)}
-                  className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Document Render */}
-            <div className="max-h-[75vh] overflow-y-auto p-3 bg-slate-100 rounded-2xl">
-              <EstimatePdfDocument
-                estimate={selectedPdfEstimate}
-                customer={selectedPdfEstimate.customer}
-                settings={settings}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Send Email Modal */}
       {isEmailModalOpen && selectedEmailEstimate && (
@@ -958,6 +905,67 @@ export default function EstimatesPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+
+      {/* PDF Export & Preview Modal */}
+      {isPdfModalOpen && selectedPdfEstimate && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 sm:py-8 overflow-y-auto print:p-0 print:m-0 print:static print:bg-white print:backdrop-blur-none print:overflow-visible print:block">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full p-3 sm:p-6 space-y-3 sm:space-y-4 my-auto animate-in fade-in zoom-in-95 print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:w-full print:rounded-none print:transform-none print:animate-none">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 pb-3 print:hidden sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 truncate">
+                    Estimate PDF Document ({selectedPdfEstimate.estimateNumber})
+                  </h3>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    Client: {selectedPdfEstimate.customerName}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end shrink-0">
+                <a
+                  href={`/estimates/${selectedPdfEstimate._id}/pdf`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  title="Open Full PDF Tab"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span className="hidden xs:inline sm:inline">Full Tab</span>
+                  <span className="xs:hidden sm:hidden">Tab</span>
+                </a>
+
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer"
+                  title="Download / Print PDF"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Download / Print</span>
+                </button>
+
+                <button
+                  onClick={() => setIsPdfModalOpen(false)}
+                  className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 cursor-pointer"
+                  title="Close Modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Document Render */}
+            <div className="max-h-[75vh] overflow-y-auto overflow-x-auto p-1.5 sm:p-3 bg-slate-100 rounded-xl sm:rounded-2xl print:max-h-none print:overflow-visible print:p-0 print:bg-white print:rounded-none">
+              <EstimatePdfDocument
+                estimate={selectedPdfEstimate}
+                customer={selectedPdfEstimate.customer}
+                settings={settings}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

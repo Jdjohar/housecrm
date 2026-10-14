@@ -68,12 +68,12 @@ body {
 }
 
 /* =========================================================
-   PERFECT FULL-PAGE PDF PRINT STYLES (Isolates document only)
+   PERFECT FULL-PAGE PDF PRINT STYLES (Single Page, Zero Blank Space)
    ========================================================= */
 @media print {
   @page {
     size: letter portrait;
-    margin: 8mm 8mm 8mm 8mm;
+    margin: 8mm;
   }
 
   html, body {
@@ -89,54 +89,74 @@ body {
     print-color-adjust: exact !important;
   }
 
-  /* 1. Hide the entire application body content */
-  body * {
-    visibility: hidden !important;
-  }
-
-  /* 2. Show ONLY the printable invoice / estimate document and its children */
-  #printable-estimate-doc,
-  #printable-estimate-doc * {
-    visibility: visible !important;
-  }
-
-  /* 3. Position the printable document at the top left of the page */
-  #printable-estimate-doc {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
+  /* Reset main shell and wrappers */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
     max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: #ffffff !important;
-    display: block !important;
-  }
-
-  /* Reset any modal scroll containers in print */
-  .fixed.inset-0,
-  .max-h-\[75vh\],
-  .max-h-\[80vh\],
-  .overflow-y-auto {
-    position: static !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    width: 100% !important;
     overflow: visible !important;
-    max-height: none !important;
-    height: auto !important;
-    box-shadow: none !important;
   }
 
+  /* Hide application chrome, navigation, buttons, and anything with print:hidden */
   .print\:hidden,
   .no-print,
   aside,
   nav,
   header,
+  footer,
   button {
     display: none !important;
+  }
+
+  /* Reset any modal containers, overlays and backdrops in print */
+  .fixed.inset-0,
+  [class*="backdrop-blur"],
+  [class*="animate-in"],
+  .max-h-\[75vh\],
+  .max-h-\[80vh\],
+  .max-h-\[90vh\],
+  .overflow-y-auto,
+  .overflow-x-auto {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: none !important;
+    animation: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Printable document styling */
+  #printable-estimate-doc {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    display: block !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  #printable-estimate-doc * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 

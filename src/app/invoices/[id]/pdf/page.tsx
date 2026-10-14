@@ -56,29 +56,29 @@ export default function InvoiceStandalonePdfPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-200 py-6 px-4 print:bg-white print:p-0 print:m-0">
+    <div className="min-h-screen bg-slate-200 py-3 sm:py-6 px-2 sm:px-4 print:bg-white print:p-0 print:m-0 print:min-h-0">
       {/* Top Floating Controls (Hidden during print / save to PDF) */}
-      <div className="max-w-[850px] mx-auto mb-4 bg-slate-900 text-white p-3.5 px-5 rounded-2xl shadow-xl flex items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center space-x-3">
+      <div className="max-w-[850px] mx-auto mb-4 bg-slate-900 text-white p-3 sm:p-3.5 px-3.5 sm:px-5 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 print:hidden">
+        <div className="flex items-center space-x-3 min-w-0">
           <button
             onClick={() => router.push('/invoices')}
-            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition cursor-pointer"
+            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition cursor-pointer shrink-0"
             title="Back to Invoices"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <div className="text-xs font-bold text-white flex items-center gap-1.5">
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-white flex items-center gap-1.5 truncate">
               <span>Invoice PDF Document</span>
               <span className="font-mono text-purple-400">({invoice.invoiceNumber})</span>
             </div>
-            <div className="text-[11px] text-slate-400">
+            <div className="text-[11px] text-slate-400 truncate">
               Customer: {invoice.customerName}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap justify-end w-full sm:w-auto shrink-0">
           <a
             href={`/portal/invoice/${invoice._id}`}
             target="_blank"
@@ -100,7 +100,7 @@ export default function InvoiceStandalonePdfPage() {
       </div>
 
       {/* Full Sheet Document Container */}
-      <div className="max-w-[850px] mx-auto shadow-2xl rounded-2xl overflow-hidden print:shadow-none print:max-w-none print:w-full print:rounded-none">
+      <div className="max-w-[850px] mx-auto shadow-2xl rounded-2xl overflow-x-auto print:overflow-visible print:shadow-none print:max-w-none print:w-full print:rounded-none">
         <EstimatePdfDocument
           estimate={invoice}
           customer={invoice.customer}

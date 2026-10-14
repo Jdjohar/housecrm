@@ -857,7 +857,8 @@ export default function JobsPage() {
   const countCancelled = jobs.filter((j) => j.status === 'cancelled').length;
 
   return (
-    <div className="space-y-5">
+    <>
+      <div className="space-y-5 print:hidden">
       {/* TOP HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -2871,44 +2872,7 @@ export default function JobsPage() {
         </div>
       )}
 
-      {/* PDF WORK ORDER MODAL */}
-      {isPdfModalOpen && selectedPdfJob && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs overflow-y-auto flex justify-center items-start p-4 sm:p-6 sm:py-8">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-6 space-y-4 animate-in fade-in zoom-in-95 my-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 print:hidden sticky top-0 bg-white z-10">
-              <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <h3 className="font-bold text-base text-slate-900">
-                  Official Job Work Order ({selectedPdfJob.jobNumber})
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Download / Print PDF</span>
-                </button>
-                <button
-                  onClick={() => setIsPdfModalOpen(false)}
-                  className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
 
-            <div className="max-h-[75vh] overflow-y-auto p-3 bg-slate-100 rounded-2xl">
-              <EstimatePdfDocument
-                estimate={selectedPdfJob}
-                customer={selectedPdfJob.customer}
-                settings={settings}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* LIVE ETA CREW DISPATCH MODAL */}
       {etaModalJob && (
@@ -2986,6 +2950,53 @@ export default function JobsPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+
+      {/* PDF WORK ORDER MODAL */}
+      {isPdfModalOpen && selectedPdfJob && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs overflow-y-auto flex justify-center items-start p-2 sm:p-6 sm:py-8 print:p-0 print:m-0 print:static print:bg-white print:backdrop-blur-none print:overflow-visible print:block">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full p-3 sm:p-6 space-y-3 sm:space-y-4 animate-in fade-in zoom-in-95 my-auto print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:w-full print:rounded-none print:transform-none print:animate-none">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 pb-3 print:hidden sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 truncate">
+                    Official Job Work Order ({selectedPdfJob.jobNumber})
+                  </h3>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    Customer: {selectedPdfJob.customerName}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end shrink-0">
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer"
+                  title="Download / Print PDF"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Download / Print</span>
+                </button>
+                <button
+                  onClick={() => setIsPdfModalOpen(false)}
+                  className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 cursor-pointer"
+                  title="Close Modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-[75vh] overflow-y-auto overflow-x-auto p-1.5 sm:p-3 bg-slate-100 rounded-xl sm:rounded-2xl print:max-h-none print:overflow-visible print:p-0 print:bg-white print:rounded-none">
+              <EstimatePdfDocument
+                estimate={selectedPdfJob}
+                customer={selectedPdfJob.customer}
+                settings={settings}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

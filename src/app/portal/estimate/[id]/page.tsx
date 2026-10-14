@@ -173,7 +173,7 @@ export default function ClientEstimatePortal() {
       </div>
 
       {/* Render Official PDF Layout */}
-      <div className="max-w-[850px] mx-auto rounded-3xl overflow-hidden shadow-xl print:shadow-none print:max-w-none">
+      <div className="max-w-[850px] mx-auto rounded-3xl overflow-x-auto shadow-xl print:shadow-none print:max-w-none print:overflow-visible">
         <EstimatePdfDocument estimate={est} customer={est.customer} />
       </div>
     </div>

@@ -78,33 +78,33 @@ export default function EstimatePdfDocument({
   return (
     <div
       id="printable-estimate-doc"
-      className="bg-white text-slate-800 p-8 sm:p-10 max-w-[850px] mx-auto text-xs leading-relaxed print:p-2 print:max-w-none print:w-full print:text-[11px] font-sans shadow-sm border border-slate-200 print:border-none print:shadow-none"
+      className="bg-white text-slate-800 p-3 sm:p-8 md:p-10 max-w-[850px] mx-auto text-xs leading-relaxed print:p-2 print:max-w-none print:w-full print:text-[11px] font-sans shadow-sm border border-slate-200 print:border-none print:shadow-none rounded-2xl print:rounded-none"
     >
       {/* Top Header */}
-      <div className="flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-6">
+      <div className="flex flex-col sm:flex-row print:flex-row justify-between items-start gap-4 border-b-2 border-slate-800 pb-4 sm:pb-6 mb-4 sm:mb-6">
         {/* Left: Brand Logo & Mascot */}
-        <div className="flex items-center space-x-3.5">
+        <div className="flex items-center space-x-3 sm:space-x-3.5">
           <img
             src="/logo.jpg"
             alt="H&H House Maintenance Logo"
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-sm border border-slate-200 shrink-0"
+            className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-sm border border-slate-200 shrink-0"
           />
           <div>
-            <div className="text-lg font-black tracking-tight text-[#0f2744] uppercase leading-tight">
+            <div className="text-base sm:text-lg font-black tracking-tight text-[#0f2744] uppercase leading-tight">
               H & H HOUSE MAINTENANCE LTD.
             </div>
-            <div className="text-[11px] font-semibold text-slate-600 tracking-wide">
+            <div className="text-[10px] sm:text-[11px] font-semibold text-slate-600 tracking-wide">
               Professional Property Services
             </div>
-            <div className="text-[10px] text-slate-500 font-medium">
+            <div className="text-[9px] sm:text-[10px] text-slate-500 font-medium">
               Pressure Washing • Roof & Gutters • Window Cleaning • Fencing
             </div>
           </div>
         </div>
 
         {/* Right: Title & Meta */}
-        <div className="text-right">
-          <h1 className="text-3xl font-black text-[#0f2744] tracking-tight mb-1">
+        <div className="text-left sm:text-right print:text-right w-full sm:w-auto print:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 print:border-t-0">
+          <h1 className="text-2xl sm:text-3xl font-black text-[#0f2744] tracking-tight mb-1">
             {docType}
           </h1>
           <div className="text-xs font-bold text-slate-800">
@@ -126,7 +126,7 @@ export default function EstimatePdfDocument({
       </div>
 
       {/* Bill To & Company Info (2 Column Box) */}
-      <div className="grid grid-cols-2 gap-4 bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-3 sm:gap-4 bg-slate-50 rounded-xl p-3 sm:p-4 border border-slate-200 mb-4">
         {/* Left: Bill To */}
         <div className="space-y-1 pr-2">
           <div className="font-black text-[#0f2744] text-[11px] uppercase tracking-wider mb-1">
@@ -144,7 +144,7 @@ export default function EstimatePdfDocument({
         </div>
 
         {/* Right: H&H Info */}
-        <div className="space-y-1 pl-2 border-l border-slate-200">
+        <div className="space-y-1 sm:pl-3 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l border-slate-200 print:pl-3 print:pt-0 print:border-t-0 print:border-l">
           <div className="font-black text-[#0f2744] text-[11px] uppercase tracking-wider mb-1">
             H & H HOUSE MAINTENANCE LTD.
           </div>
@@ -165,7 +165,7 @@ export default function EstimatePdfDocument({
       </div>
 
       {/* Service Address Box */}
-      <div className="bg-slate-50 rounded-lg p-2.5 px-4 border border-slate-200 mb-5 flex items-center justify-between">
+      <div className="bg-slate-50 rounded-lg p-2.5 px-3 sm:px-4 border border-slate-200 mb-4 sm:mb-5 flex flex-col sm:flex-row print:flex-row items-start sm:items-center justify-between gap-1">
         <span className="font-black text-[#0f2744] text-[11px] uppercase tracking-wider">
           SERVICE ADDRESS:
         </span>
@@ -175,21 +175,21 @@ export default function EstimatePdfDocument({
       </div>
 
       {/* Items Table */}
-      <div className="mb-6 overflow-hidden rounded-xl border border-slate-200">
-        <table className="w-full text-left border-collapse">
+      <div className="mb-4 sm:mb-6 overflow-x-auto rounded-xl border border-slate-200">
+        <table className="w-full text-left border-collapse min-w-[480px] sm:min-w-full print:min-w-full">
           <thead>
             <tr className="bg-[#0f2744] text-white text-[11px] uppercase font-bold tracking-wider">
-              <th className="py-2.5 px-4 w-[55%]">DESCRIPTION</th>
-              <th className="py-2.5 px-3 text-center w-[10%]">QTY</th>
-              <th className="py-2.5 px-4 text-right w-[15%]">RATE</th>
-              <th className="py-2.5 px-4 text-right w-[20%]">AMOUNT</th>
+              <th className="py-2.5 px-3 sm:px-4 w-[52%]">DESCRIPTION</th>
+              <th className="py-2.5 px-2 sm:px-3 text-center w-[12%]">QTY</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right w-[16%]">RATE</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right w-[20%]">AMOUNT</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 text-xs">
             {estimate.items && estimate.items.length > 0 ? (
               estimate.items.map((item: any, idx: number) => (
                 <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
-                  <td className="py-3 px-4">
+                  <td className="py-2.5 sm:py-3 px-3 sm:px-4">
                     <div className="font-bold text-slate-900">{item.service}</div>
                     {item.description && (
                       <div className="text-[11px] text-slate-500 mt-0.5 whitespace-pre-line">
@@ -197,13 +197,13 @@ export default function EstimatePdfDocument({
                       </div>
                     )}
                   </td>
-                  <td className="py-3 px-3 text-center font-semibold text-slate-700">
+                  <td className="py-2.5 sm:py-3 px-2 sm:px-3 text-center font-semibold text-slate-700">
                     {item.quantity || 1}
                   </td>
-                  <td className="py-3 px-4 text-right font-medium text-slate-700">
+                  <td className="py-2.5 sm:py-3 px-3 sm:px-4 text-right font-medium text-slate-700">
                     ${(Number(item.unitPrice) || 0).toFixed(2)}
                   </td>
-                  <td className="py-3 px-4 text-right font-bold text-slate-900">
+                  <td className="py-2.5 sm:py-3 px-3 sm:px-4 text-right font-bold text-slate-900">
                     ${(Number(item.total) || 0).toFixed(2)}
                   </td>
                 </tr>
@@ -220,8 +220,8 @@ export default function EstimatePdfDocument({
       </div>
 
       {/* Financial Summary */}
-      <div className="flex justify-end mb-6">
-        <div className="w-80 space-y-1.5 text-xs text-slate-700">
+      <div className="flex justify-end mb-4 sm:mb-6">
+        <div className="w-full sm:w-80 print:w-80 space-y-1.5 text-xs text-slate-700">
           <div className="flex justify-between py-1 border-b border-slate-100">
             <span className="font-medium">Subtotal</span>
             <span className="font-semibold text-slate-900">${subtotal.toFixed(2)}</span>
@@ -309,9 +309,9 @@ export default function EstimatePdfDocument({
       </div>
 
       {/* Two-Column Notes Box */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         {/* Work Scope */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+        <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-1.5 sm:space-y-2">
           <div className="font-black text-[#0f2744] text-[11px] uppercase tracking-wider">
             WORK SCOPE &amp; TERMS
           </div>
@@ -323,7 +323,7 @@ export default function EstimatePdfDocument({
         </div>
 
         {/* Service Notes */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+        <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-1.5 sm:space-y-2">
           <div className="font-black text-[#0f2744] text-[11px] uppercase tracking-wider">
             SERVICE &amp; ACCESS NOTES
           </div>
@@ -338,7 +338,7 @@ export default function EstimatePdfDocument({
 
       {/* Dynamic Action Banner based on docType */}
       {docType === 'WORK ORDER' ? (
-        <div className="bg-[#0f2744] text-white p-4 rounded-xl mb-6 text-center space-y-1">
+        <div className="bg-[#0f2744] text-white p-3.5 sm:p-4 rounded-xl mb-4 sm:mb-6 text-center space-y-1">
           <div className="font-black text-sm tracking-wide text-emerald-300">
             CONFIRMED BOOKING &amp; WORK ORDER
           </div>
@@ -350,7 +350,7 @@ export default function EstimatePdfDocument({
           </div>
         </div>
       ) : docType === 'INVOICE' ? (
-        <div className="bg-[#0f2744] text-white p-4 rounded-xl mb-6 text-center space-y-1">
+        <div className="bg-[#0f2744] text-white p-3.5 sm:p-4 rounded-xl mb-4 sm:mb-6 text-center space-y-1">
           <div className="font-black text-sm tracking-wide text-amber-300">
             PAYMENT INSTRUCTIONS
           </div>
@@ -362,7 +362,7 @@ export default function EstimatePdfDocument({
           </div>
         </div>
       ) : (
-        <div className="bg-[#0f2744] text-white p-4 rounded-xl mb-6 text-center space-y-1">
+        <div className="bg-[#0f2744] text-white p-3.5 sm:p-4 rounded-xl mb-4 sm:mb-6 text-center space-y-1">
           <div className="font-black text-sm tracking-wide text-amber-300">
             READY TO APPROVE?
           </div>
