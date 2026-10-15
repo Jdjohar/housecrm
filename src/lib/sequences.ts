@@ -70,7 +70,7 @@ export async function getNextEstimateNumber(preferred?: string): Promise<string>
 }
 
 /**
- * Safely generates the next unique Invoice Number (e.g. INV-2026-301...)
+ * Safely generates the next unique Invoice Number starting from 10278 (e.g. 10278, 10279...)
  */
 export async function getNextInvoiceNumber(preferred?: string): Promise<string> {
   if (preferred && preferred.trim()) {
@@ -78,29 +78,25 @@ export async function getNextInvoiceNumber(preferred?: string): Promise<string> 
     if (!exists) return preferred.trim();
   }
 
-  const currentYear = new Date().getFullYear();
-  const prefix = `INV-${currentYear}-`;
-  const invoices = await Invoice.find(
-    { invoiceNumber: { $regex: new RegExp(`^${prefix}\\d+$`, 'i') } },
-    { invoiceNumber: 1 }
-  ).lean();
+  const invoices = await Invoice.find({}, { invoiceNumber: 1 }).lean();
 
-  let maxNum = 300;
+  let maxNum = 10277; // Starting baseline so the first generated invoice is 10278
   for (const inv of invoices) {
-    const match = inv.invoiceNumber?.match(new RegExp(`^${prefix}(\\d+)$`, 'i'));
-    if (match) {
-      const num = parseInt(match[1], 10);
-      if (!isNaN(num) && num > maxNum) {
-        maxNum = num;
+    if (!inv.invoiceNumber) continue;
+    const matches = inv.invoiceNumber.match(/(\d+)/g);
+    if (matches && matches.length > 0) {
+      const lastNum = parseInt(matches[matches.length - 1], 10);
+      if (!isNaN(lastNum) && lastNum > maxNum) {
+        maxNum = lastNum;
       }
     }
   }
 
   let counter = maxNum + 1;
-  let candidate = `${prefix}${counter}`;
+  let candidate = String(counter);
   while (await Invoice.exists({ invoiceNumber: candidate })) {
     counter++;
-    candidate = `${prefix}${counter}`;
+    candidate = String(counter);
   }
   return candidate;
 }

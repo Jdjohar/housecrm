@@ -49,7 +49,7 @@ export default function EstimatePdfDocument({
       });
 
   const docType = estimate.invoiceNumber || estimate.docType === 'invoice' ? 'INVOICE' : estimate.jobNumber || estimate.docType === 'job' ? 'WORK ORDER' : 'ESTIMATE';
-  const docNumber = estimate.invoiceNumber || estimate.jobNumber || estimate.estimateNumber || 'EST-0001';
+  const docNumber = estimate.invoiceNumber || estimate.jobNumber || estimate.estimateNumber || (docType === 'INVOICE' ? '10278' : 'EST-0001');
 
   const dateLabel = docType === 'INVOICE' ? 'Due Date:' : docType === 'WORK ORDER' ? 'Service Date:' : 'Valid Until:';
   const secondaryDate = docType === 'INVOICE' && estimate.dueDate
@@ -308,33 +308,35 @@ export default function EstimatePdfDocument({
         </div>
       </div>
 
-      {/* Two-Column Notes Box */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-        {/* Work Scope */}
-        <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-1.5 sm:space-y-2">
-          <div className="font-black text-[#0f2744] text-[11px] uppercase tracking-wider">
-            WORK SCOPE &amp; TERMS
+      {/* Two-Column Notes Box (Work Scope & Service Notes - Excluded from Invoices per requirements) */}
+      {docType !== 'INVOICE' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          {/* Work Scope */}
+          <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-1.5 sm:space-y-2">
+            <div className="font-black text-[#0f2744] text-[11px] uppercase tracking-wider">
+              WORK SCOPE &amp; TERMS
+            </div>
+            <ul className="text-[11px] text-slate-600 space-y-1 list-disc list-inside">
+              <li>Service guaranteed per H&amp;H professional standards.</li>
+              <li>Additional requests or extra scope quoted separately.</li>
+              <li>Customer water &amp; electrical access provided on site.</li>
+            </ul>
           </div>
-          <ul className="text-[11px] text-slate-600 space-y-1 list-disc list-inside">
-            <li>Service guaranteed per H&amp;H professional standards.</li>
-            <li>Additional requests or extra scope quoted separately.</li>
-            <li>Customer water &amp; electrical access provided on site.</li>
-          </ul>
-        </div>
 
-        {/* Service Notes */}
-        <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-1.5 sm:space-y-2">
-          <div className="font-black text-[#0f2744] text-[11px] uppercase tracking-wider">
-            SERVICE &amp; ACCESS NOTES
-          </div>
-          <div className="text-[11px] text-slate-600 leading-relaxed">
-            {estimate.customerNotes || estimate.notes || 'Professional property maintenance by licensed & insured specialists.'}
-          </div>
-          <div className="text-[11px] font-bold text-slate-800 pt-1">
-            Thank you for choosing H &amp; H House Maintenance Ltd.
+          {/* Service Notes */}
+          <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 space-y-1.5 sm:space-y-2">
+            <div className="font-black text-[#0f2744] text-[11px] uppercase tracking-wider">
+              SERVICE &amp; ACCESS NOTES
+            </div>
+            <div className="text-[11px] text-slate-600 leading-relaxed">
+              {estimate.customerNotes || estimate.notes || 'Professional property maintenance by licensed & insured specialists.'}
+            </div>
+            <div className="text-[11px] font-bold text-slate-800 pt-1">
+              Thank you for choosing H &amp; H House Maintenance Ltd.
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Dynamic Action Banner based on docType */}
       {docType === 'WORK ORDER' ? (
