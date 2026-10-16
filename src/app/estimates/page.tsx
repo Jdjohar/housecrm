@@ -23,6 +23,7 @@ import {
   Printer,
   Eye,
   Download,
+  Search,
 } from 'lucide-react';
 import EstimatePdfDocument from '@/components/EstimatePdfDocument';
 
@@ -57,10 +58,15 @@ export default function EstimatesPage() {
 
   // New Estimate state
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [serviceSearchQuery, setServiceSearchQuery] = useState('');
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   const [items, setItems] = useState([
-    { service: 'Gutter Cleaning & Downspout Flush', description: 'Complete debris removal', quantity: 1, unitPrice: 220, total: 220 },
-    { service: 'Vinyl Siding Soft Wash (House Wash)', description: 'Low pressure eco wash', quantity: 1, unitPrice: 280, total: 280 },
+    {
+      service: 'Roof cleaning, gutters included',
+      description: 'Hand removal of debris & downspout flow test',
+      quantity: 1,
+      unitPrice: 350,
+      total: 350,
+    },
   ]);
   const [notes, setNotes] = useState('Thank you for choosing H&H House Maintenance (hnhpros.ca). Estimate valid for 30 days.');
 
@@ -203,22 +209,22 @@ export default function EstimatesPage() {
 
   const handleAddItem = (presetSvc?: any) => {
     if (presetSvc) {
-      setItems([
-        ...items,
+      setItems((prev) => [
+        ...prev,
         {
           service: presetSvc.name,
-          description: presetSvc.description || '',
+          description: presetSvc.description || `Standard ${presetSvc.name}`,
           quantity: 1,
           unitPrice: presetSvc.price || presetSvc.defaultPrice || 200,
           total: presetSvc.price || presetSvc.defaultPrice || 200,
         },
       ]);
     } else {
-      setItems([
-        ...items,
+      setItems((prev) => [
+        ...prev,
         {
-          service: 'Driveway Power Washing',
-          description: 'Rotary scrub wash',
+          service: 'Custom Service',
+          description: 'Specialized property cleaning',
           quantity: 1,
           unitPrice: 150,
           total: 150,
@@ -313,10 +319,75 @@ export default function EstimatesPage() {
     }
   };
 
-  // Available services list from settings
+  // Standard services
+  const defaultServices = [
+    { name: 'Roof cleaning, gutters included', price: 350, unit: 'per job' },
+    { name: 'House soft wash', price: 280, unit: 'per job' },
+    { name: 'Gutter cleaning only', price: 220, unit: 'per job' },
+    { name: 'Window cleaning', price: 160, unit: 'per job' },
+    { name: 'Driveway and concrete', price: 180, unit: 'per job' },
+    { name: 'Deck and patio', price: 200, unit: 'per job' },
+    { name: 'Siding wash', price: 250, unit: 'per job' },
+    { name: 'Commercial wash', price: 450, unit: 'per job' },
+    { name: 'Lawn mowing', price: 85, unit: 'per job' },
+    { name: 'Hedge and bush trimming', price: 140, unit: 'per job' },
+    { name: 'Tree trimming', price: 250, unit: 'per job' },
+    { name: 'Yard cleanup', price: 190, unit: 'per job' },
+    { name: 'Fence installation', price: 1200, unit: 'per job' },
+    { name: 'Fence repair', price: 350, unit: 'per job' },
+    { name: 'Gate installation', price: 400, unit: 'per job' },
+  ];
+
   const availableServices = settings?.customServices?.length
-    ? settings.customServices
-    : catalogServices;
+    ? [
+        ...(settings.customServices.some((s: any) => s.name?.toLowerCase().includes('roof cleaning'))
+          ? []
+          : [{ name: 'Roof cleaning, gutters included', price: 350, unit: 'per job' }]),
+        ...settings.customServices,
+      ]
+    : defaultServices;
+
+  const filteredCustomers = customers.filter((c) => {
+    if (!customerSearchQuery.trim()) return true;
+    const q = customerSearchQuery.toLowerCase();
+    return (
+      c.name?.toLowerCase().includes(q) ||
+      c.phone?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.address?.toLowerCase().includes(q) ||
+      c.city?.toLowerCase().includes(q)
+    );
+  });
+
+  const selectedCustomerObj = customers.find((c) => c._id === selectedCustomerId);
+
+  const isServiceMatch = (itemSvc: string, svcName: string) => {
+    if (!itemSvc || !svcName) return false;
+    const s1 = itemSvc.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const s2 = svcName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return s1 === s2 || s1.includes(s2) || s2.includes(s1);
+  };
+
+  const toggleService = (svc: any) => {
+    const isSelected = items.some((it: any) => isServiceMatch(it.service, svc.name));
+    if (isSelected) {
+      setItems(items.filter((it: any) => !isServiceMatch(it.service, svc.name)));
+    } else {
+      if (items.length === 1 && (!items[0].service || items[0].service === 'Custom Service' || items[0].service === 'Custom Maintenance Service' || items[0].service === 'Driveway Power Washing')) {
+        setItems([
+          {
+            service: svc.name,
+            description: svc.description || `Standard ${svc.name}`,
+            quantity: 1,
+            unitPrice: svc.price || svc.defaultPrice || 200,
+            total: svc.price || svc.defaultPrice || 200,
+          },
+        ]);
+      } else {
+        handleAddItem(svc);
+      }
+    }
+  };
 
   // Delete estimate with user confirmation
   const handleDeleteEstimate = async () => {
@@ -654,184 +725,210 @@ export default function EstimatesPage() {
             {/* Scrollable Form Body */}
             <form onSubmit={handleCreateEstimate} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1 text-xs">
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1">Select Customer</label>
+                {/* 1. CUSTOMER SELECTION WITH SEARCH & PREVIEW */}
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-blue-600" />
+                      Select Customer
+                    </label>
+                    {customers.length > 0 && (
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {customers.length} total customers
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Customer Search Input */}
+                  <div className="relative mb-1.5">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={customerSearchQuery}
+                      onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                      placeholder="Search by name, phone, or address..."
+                      className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none transition placeholder:text-slate-400 font-medium"
+                    />
+                    {customerSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomerSearchQuery('')}
+                        className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 text-xs font-bold p-0.5 cursor-pointer"
+                        title="Clear search"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
                   {customers.length === 0 ? (
-                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800">
-                      No customers found. Please go to the <strong>Customers</strong> tab to add a customer first!
+                    <div className="text-xs text-amber-600 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                      No customers found. Add a customer first in Customers page.
+                    </div>
+                  ) : filteredCustomers.length === 0 ? (
+                    <div className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between">
+                      <span>No customer matches &quot;{customerSearchQuery}&quot;</span>
+                      <button
+                        type="button"
+                        onClick={() => setCustomerSearchQuery('')}
+                        className="text-xs text-blue-600 font-bold hover:underline cursor-pointer"
+                      >
+                        Show all
+                      </button>
                     </div>
                   ) : (
                     <select
                       value={selectedCustomerId}
                       onChange={(e) => setSelectedCustomerId(e.target.value)}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 bg-white"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                     >
-                      {customers.map((c) => (
+                      <option value="">-- Choose Customer ({filteredCustomers.length}) --</option>
+                      {filteredCustomers.map((c) => (
                         <option key={c._id} value={c._id}>
-                          {c.name} — {c.address}, {c.city} ({c.phone})
+                          {c.name} — {c.phone || c.email} ({c.city || 'BC'})
                         </option>
                       ))}
                     </select>
                   )}
+
+                  {/* Selected Customer Details Preview Pill */}
+                  {selectedCustomerObj && (
+                    <div className="mt-2 p-2 px-3 bg-blue-50/70 border border-blue-200/60 rounded-xl text-[11px] text-slate-700 flex items-center justify-between">
+                      <div className="truncate">
+                        <span className="font-bold text-blue-900">{selectedCustomerObj.name}</span>
+                        {selectedCustomerObj.phone && (
+                          <span className="text-slate-600 ml-1.5 font-medium">• {selectedCustomerObj.phone}</span>
+                        )}
+                        {selectedCustomerObj.address && (
+                          <span className="text-slate-500 ml-1.5">• {selectedCustomerObj.address}, {selectedCustomerObj.city}</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-md shrink-0 ml-2">
+                        Selected
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Service Line Items Controls & Searchable Standard Services */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Wrench className="w-3.5 h-3.5 text-blue-600" />
-                      Service Line Items
-                    </label>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => setIsRoofCalcOpen(true)}
-                        className="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 flex items-center gap-1.5 transition cursor-pointer"
-                      >
-                        <Grid3X3 className="w-3.5 h-3.5" /> + Roof Matrix Calc
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleAddItem()}
-                        className="text-xs text-slate-700 font-bold hover:bg-slate-100 flex items-center gap-1 border border-slate-200 px-2.5 py-1 rounded-lg bg-white cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> + Custom Blank Item
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Standard Services List with Live Search Bar */}
-                  <div className="p-3 bg-gradient-to-br from-slate-50 to-blue-50/40 rounded-2xl border border-blue-100 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                        Standard Services List (Click to Add):
+                {/* 2. LINE ITEMS & SERVICES */}
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+                  {/* SERVICES PILLS CARD (STYLE MATCHING INVOICE & BOOKING PAGE) */}
+                  <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black tracking-wider text-slate-500 uppercase">
+                        SERVICES
                       </span>
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        {availableServices.length} standard services configured
-                      </span>
-                    </div>
-
-                    {/* Search Bar */}
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Search standard service (e.g. House wash, Gutter, Window, Siding, Fence...)"
-                        value={serviceSearchQuery}
-                        onChange={(e) => setServiceSearchQuery(e.target.value)}
-                        className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400"
-                      />
-                      <div className="absolute left-2.5 top-2 text-slate-400 pointer-events-none text-xs">
-                        🔍
-                      </div>
-                      {serviceSearchQuery && (
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => setServiceSearchQuery('')}
-                          className="absolute right-2.5 top-1.5 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+                          onClick={() => {
+                            setIsRoofCalcOpen(true);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] transition cursor-pointer"
                         >
-                          ✕
+                          🏠 Roof Matrix
                         </button>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => handleAddItem()}
+                          className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[10px] transition cursor-pointer"
+                        >
+                          + Custom Service
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Filtered Services Badges / Grid */}
-                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
-                      {availableServices
-                        .filter((svc: any) =>
-                          svc.name.toLowerCase().includes(serviceSearchQuery.toLowerCase())
-                        )
-                        .map((svc: any, idx: number) => {
-                          const price = svc.price || svc.defaultPrice || 200;
-                          const unit = svc.unit || 'job';
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => handleAddItem(svc)}
-                              className="group px-2.5 py-1 rounded-lg bg-white hover:bg-blue-600 border border-slate-200 hover:border-blue-600 text-slate-700 hover:text-white transition-all text-left flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                            >
-                              <span className="text-xs font-semibold">{svc.name}</span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 group-hover:bg-blue-500 text-blue-700 group-hover:text-white border border-blue-100 group-hover:border-blue-400">
-                                ${price}
-                              </span>
-                              <span className="text-[10px] text-slate-400 group-hover:text-blue-100 font-normal">
-                                /{unit}
-                              </span>
-                              <Plus className="w-3 h-3 text-blue-500 group-hover:text-white" />
-                            </button>
-                          );
-                        })}
-                      {availableServices.filter((svc: any) =>
-                        svc.name.toLowerCase().includes(serviceSearchQuery.toLowerCase())
-                      ).length === 0 && (
-                        <div className="text-xs text-slate-400 py-1 italic">
-                          No service matching &quot;{serviceSearchQuery}&quot; found. You can add a custom item above.
-                        </div>
-                      )}
+                    {/* Pills Flex Wrap - Selected dark navy blue, unselected white with outline */}
+                    <div className="flex flex-wrap gap-2 sm:gap-2.5 pt-1">
+                      {availableServices.map((svc: any, idx: number) => {
+                        const isSelected = items.some((it: any) =>
+                          isServiceMatch(it.service, svc.name)
+                        );
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => toggleService(svc)}
+                            className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition cursor-pointer select-none text-left active:scale-95 ${
+                              isSelected
+                                ? 'bg-[#182848] text-white shadow-xs'
+                                : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            {svc.name}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    {items.map((item, idx) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                          <div className="sm:col-span-6">
+                  {/* Selected Items Breakdown (Qty & Price) */}
+                  {items.length > 0 && (
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Selected Scope &amp; Pricing Breakdown ({items.length} item{items.length > 1 ? 's' : ''})
+                      </div>
+                      {items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs space-y-2"
+                        >
+                          <div className="flex items-center justify-between gap-2">
                             <input
                               type="text"
                               value={item.service}
                               onChange={(e) => handleItemChange(idx, 'service', e.target.value)}
                               placeholder="Service name"
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white font-semibold text-xs"
+                              className="flex-1 font-bold text-slate-900 border-b border-transparent focus:border-blue-500 outline-none"
                             />
+                            {items.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(idx)}
+                                className="text-slate-300 hover:text-rose-500 cursor-pointer p-0.5"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
-                          <div className="sm:col-span-6 flex items-center gap-2">
-                            <div className="w-20">
+
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
+                            placeholder="Description"
+                            className="w-full text-[11px] text-slate-500 border-b border-transparent focus:border-blue-500 outline-none"
+                          />
+
+                          <div className="flex items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-100">
+                            <div className="flex items-center gap-1">
+                              <span>Qty:</span>
                               <input
                                 type="number"
                                 min="1"
                                 value={item.quantity}
                                 onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                                placeholder="Qty"
-                                className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                                className="w-12 px-1.5 py-0.5 rounded border border-slate-200 text-center font-bold"
                               />
                             </div>
-                            <div className="flex-1">
+                            <div className="flex items-center gap-1">
+                              <span>Price: $</span>
                               <input
                                 type="number"
-                                min="0"
                                 value={item.unitPrice}
                                 onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
-                                placeholder="Price ($)"
-                                className="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                                className="w-20 px-1.5 py-0.5 rounded border border-slate-200 text-right font-bold"
                               />
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveItem(idx)}
-                              className="p-1.5 text-slate-400 hover:text-rose-500 active:scale-95 transition cursor-pointer shrink-0 tap-target flex items-center justify-center"
-                              title="Remove item"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="font-black text-slate-900">
+                              ${(Number(item.total) || 0).toFixed(2)}
+                            </div>
                           </div>
                         </div>
-
-                        {/* Description input */}
-                        <div>
-                          <input
-                            type="text"
-                            value={item.description}
-                            onChange={(e) => handleItemChange(idx, 'description', e.target.value)}
-                            placeholder="Service details / scope description..."
-                            className="w-full px-2 py-1 rounded-lg border border-slate-200 bg-white text-[11px] text-slate-600"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Totals */}

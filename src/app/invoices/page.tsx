@@ -55,6 +55,7 @@ export default function InvoicesPage() {
   // New Invoice Modal state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   const [includeGst, setIncludeGst] = useState(true);
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString().split('T')[0]
@@ -412,6 +413,20 @@ export default function InvoicesPage() {
     }
   };
 
+  const filteredCustomers = customers.filter((c) => {
+    if (!customerSearchQuery.trim()) return true;
+    const q = customerSearchQuery.toLowerCase();
+    return (
+      c.name?.toLowerCase().includes(q) ||
+      c.phone?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      c.address?.toLowerCase().includes(q) ||
+      c.city?.toLowerCase().includes(q)
+    );
+  });
+
+  const selectedCustomerObj = customers.find((c) => c._id === selectedCustomerId);
+
   return (
     <>
       <div className="space-y-6 print:hidden">
@@ -633,26 +648,86 @@ export default function InvoicesPage() {
                 {/* Customer Selector & Due Date */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-blue-600" />
-                      Select Customer:
+                    <label className="text-xs font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <User className="w-3.5 h-3.5 text-blue-600" />
+                        Select Customer:
+                      </span>
+                      {customerSearchQuery && (
+                        <span className="text-[10px] text-blue-600 font-semibold">
+                          {filteredCustomers.length} of {customers.length} match
+                        </span>
+                      )}
                     </label>
+
+                    {/* Customer Search Input */}
+                    <div className="relative mb-1.5">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={customerSearchQuery}
+                        onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                        placeholder="Search by name, phone, or address..."
+                        className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition placeholder:text-slate-400 font-medium"
+                      />
+                      {customerSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setCustomerSearchQuery('')}
+                          className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 text-xs font-bold p-0.5 cursor-pointer"
+                          title="Clear search"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
                     {customers.length === 0 ? (
                       <div className="text-xs text-amber-600 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
                         No customers found. Add a customer first in Customers page.
+                      </div>
+                    ) : filteredCustomers.length === 0 ? (
+                      <div className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span>No customer matches &quot;{customerSearchQuery}&quot;</span>
+                        <button
+                          type="button"
+                          onClick={() => setCustomerSearchQuery('')}
+                          className="text-xs text-blue-600 font-bold hover:underline cursor-pointer"
+                        >
+                          Show all
+                        </button>
                       </div>
                     ) : (
                       <select
                         value={selectedCustomerId}
                         onChange={(e) => setSelectedCustomerId(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                       >
-                        {customers.map((c) => (
+                        <option value="">-- Choose Customer ({filteredCustomers.length}) --</option>
+                        {filteredCustomers.map((c) => (
                           <option key={c._id} value={c._id}>
-                            {c.name} — {c.phone || c.email}
+                            {c.name} — {c.phone || c.email} ({c.city || 'BC'})
                           </option>
                         ))}
                       </select>
+                    )}
+
+                    {/* Selected Customer Details Preview Pill */}
+                    {selectedCustomerObj && (
+                      <div className="mt-2 p-2 px-3 bg-blue-50/70 border border-blue-200/60 rounded-xl text-[11px] text-slate-700 flex items-center justify-between">
+                        <div className="truncate">
+                          <span className="font-bold text-blue-900">{selectedCustomerObj.name}</span>
+                          {selectedCustomerObj.phone && (
+                            <span className="text-slate-600 ml-1.5 font-medium">• {selectedCustomerObj.phone}</span>
+                          )}
+                          {selectedCustomerObj.address && (
+                            <span className="text-slate-500 ml-1.5">• {selectedCustomerObj.address}, {selectedCustomerObj.city}</span>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-md shrink-0 ml-2">
+                          Selected
+                        </span>
+                      </div>
                     )}
                   </div>
 
