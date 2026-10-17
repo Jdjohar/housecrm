@@ -179,10 +179,8 @@ export default function EstimatePdfDocument({
         <table className="w-full text-left border-collapse min-w-[480px] sm:min-w-full print:min-w-full">
           <thead>
             <tr className="bg-[#0f2744] text-white text-[11px] uppercase font-bold tracking-wider">
-              <th className="py-2.5 px-3 sm:px-4 w-[52%]">DESCRIPTION</th>
-              <th className="py-2.5 px-2 sm:px-3 text-center w-[12%]">QTY</th>
-              <th className="py-2.5 px-3 sm:px-4 text-right w-[16%]">RATE</th>
-              <th className="py-2.5 px-3 sm:px-4 text-right w-[20%]">AMOUNT</th>
+              <th className="py-2.5 px-3 sm:px-4 w-[75%]">DESCRIPTION</th>
+              <th className="py-2.5 px-3 sm:px-4 text-right w-[25%]">AMOUNT</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 text-xs">
@@ -197,20 +195,14 @@ export default function EstimatePdfDocument({
                       </div>
                     )}
                   </td>
-                  <td className="py-2.5 sm:py-3 px-2 sm:px-3 text-center font-semibold text-slate-700">
-                    {item.quantity || 1}
-                  </td>
-                  <td className="py-2.5 sm:py-3 px-3 sm:px-4 text-right font-medium text-slate-700">
-                    ${(Number(item.unitPrice) || 0).toFixed(2)}
-                  </td>
                   <td className="py-2.5 sm:py-3 px-3 sm:px-4 text-right font-bold text-slate-900">
-                    ${(Number(item.total) || 0).toFixed(2)}
+                    ${(Number(item.total) || Number(item.unitPrice) || 0).toFixed(2)}
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="py-4 text-center text-slate-400">
+                <td colSpan={2} className="py-4 text-center text-slate-400">
                   No items listed.
                 </td>
               </tr>

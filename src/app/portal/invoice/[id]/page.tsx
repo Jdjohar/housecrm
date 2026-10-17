@@ -155,9 +155,7 @@ export default function ClientInvoicePortal() {
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
                   <th className="py-2.5">Service Description</th>
-                  <th className="py-2.5 text-center">Qty</th>
-                  <th className="py-2.5 text-right">Price</th>
-                  <th className="py-2.5 text-right">Total</th>
+                  <th className="py-2.5 text-right">Amount</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -169,9 +167,9 @@ export default function ClientInvoicePortal() {
                         <div className="text-slate-500 mt-0.5">{item.description}</div>
                       )}
                     </td>
-                    <td className="py-3 text-center font-medium">{item.quantity}</td>
-                    <td className="py-3 text-right font-medium">${(Number(item.unitPrice) || 0).toFixed(2)}</td>
-                    <td className="py-3 text-right font-bold">${(Number(item.total) || 0).toFixed(2)}</td>
+                    <td className="py-3 text-right font-bold text-slate-900">
+                      ${(Number(item.total) || Number(item.unitPrice) || 0).toFixed(2)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

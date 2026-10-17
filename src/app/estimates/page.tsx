@@ -277,7 +277,10 @@ export default function EstimatesPage() {
   const handleItemChange = (index: number, field: string, value: any) => {
     const updated = [...items];
     const current = { ...updated[index], [field]: value };
-    if (field === 'quantity' || field === 'unitPrice') {
+    if (field === 'unitPrice') {
+      current.quantity = 1;
+      current.total = Number(value) || 0;
+    } else if (field === 'quantity') {
       current.total = Number(current.quantity) * Number(current.unitPrice);
     }
     updated[index] = current;
@@ -862,7 +865,7 @@ export default function EstimatesPage() {
                     </div>
                   </div>
 
-                  {/* Selected Items Breakdown (Qty & Price) */}
+                  {/* Selected Items Breakdown */}
                   {items.length > 0 && (
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                       <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -902,27 +905,20 @@ export default function EstimatesPage() {
                           />
 
                           <div className="flex items-center justify-between gap-2 text-[11px] pt-1 border-t border-slate-100">
-                            <div className="flex items-center gap-1">
-                              <span>Qty:</span>
-                              <input
-                                type="number"
-                                min="1"
-                                value={item.quantity}
-                                onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                                className="w-12 px-1.5 py-0.5 rounded border border-slate-200 text-center font-bold"
-                              />
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-slate-600">Price:</span>
+                              <div className="flex items-center">
+                                <span className="text-slate-400 font-bold mr-1">$</span>
+                                <input
+                                  type="number"
+                                  value={item.unitPrice}
+                                  onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
+                                  className="w-24 px-2 py-0.5 rounded border border-slate-200 text-slate-900 font-bold outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <span>Price: $</span>
-                              <input
-                                type="number"
-                                value={item.unitPrice}
-                                onChange={(e) => handleItemChange(idx, 'unitPrice', e.target.value)}
-                                className="w-20 px-1.5 py-0.5 rounded border border-slate-200 text-right font-bold"
-                              />
-                            </div>
-                            <div className="font-black text-slate-900">
-                              ${(Number(item.total) || 0).toFixed(2)}
+                            <div className="font-black text-slate-900 text-xs">
+                              ${(Number(item.total) || Number(item.unitPrice) || 0).toFixed(2)}
                             </div>
                           </div>
                         </div>
